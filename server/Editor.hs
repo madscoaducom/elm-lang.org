@@ -53,7 +53,8 @@ editor filePath code =
         H.script ! A.src "/codemirror-3.0/lib/codemirror.js" $ mempty
         H.script ! A.src "/codemirror-3.0/mode/elm/elm.js" $ mempty
         mapM_ (\theme -> H.link ! A.rel "stylesheet" ! A.href (toValue ("/codemirror-3.0/theme/" ++ theme ++ ".css" :: String))) themes
-        H.style ! A.type_ "text/css" $ editorCss
+        H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/misc/editor.css"
+        H.script ! A.type_ "text/javascript" ! A.src "/misc/elm-docs.js" $ mempty
         H.script ! A.type_ "text/javascript" ! A.src "/misc/editor.js" $ mempty
       H.body $ do
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
@@ -70,7 +71,7 @@ editor filePath code =
                   A.onclick "compile('_blank')" ! A.value "In Tab" !
                   A.title "compile in a new tab"
                H.span  ! A.class_ "valign" $ " Auto-compile:"
-               H.input ! A.class_ "valign" ! A.type_ "checkbox" !
+               H.input ! A.class_ "valign" ! A.id "autocompile_checkbox" ! A.type_ "checkbox" !
                   A.onchange "toggleAutoUpdate(this.checked)"
              H.div ! A.style "float:left; padding:10px;" $ do
                H.span ! A.title "Show the basic examples" $ do
@@ -81,6 +82,12 @@ editor filePath code =
                     "Options:"
                H.input ! A.class_ "valign" ! A.type_ "checkbox" !
                   A.onchange "toggleOptions(this.checked);"
+               H.span ! A.style "padding-left: 16px;" ! A.class_ "valign" !
+                  A.title "Toggle with Ctrl+Space" $
+                    "Inline docs:"
+               H.input ! A.class_ "valign" ! A.id "hints_checkbox" ! A.type_ "checkbox" !
+                  A.title "Toggle with Ctrl+Space" !
+                  A.onchange "toggleHints(this.checked);"
            H.div ! A.class_ "opts" ! A.id "editor_options" $ do
              let optionFor text =
                    H.option ! A.value (toValue (text :: String)) $
@@ -96,38 +103,6 @@ editor filePath code =
                  A.onchange "toggleLines(this.checked);"
         H.script ! A.type_ "text/javascript" $ editorJS
 
--- | CSS needed to style the CodeMirror frame.
-editorCss :: Markup
-editorCss = preEscapedToMarkup $
-    ("body { margin: 0; }\n\
-     \.CodeMirror { height: 100% }\n\
-     \form { margin-bottom: 0; }\n\
-     \.zoom-80 { font-size: 80%; }\n\
-     \.zoom-100 { font-size: 100%; }\n\
-     \.zoom-150 { font-size: 150%; }\n\
-     \.zoom-200 { font-size: 200%; }\n\
-     \.valign { vertical-align: middle; }\n\
-     \.opts {\n\
-     \  background-color: rgb(216,221,225);\n\
-     \  font-family: Arial;\n\
-     \  font-size: 14px;\n\
-     \  overflow: hidden;\n\
-     \  position: absolute;\n\
-     \}\n\
-     \#editor_options {\n\
-     \  bottom: 28px;\n\
-     \  left: 0;\n\
-     \  right: 0;\n\
-     \  padding: 4px;\n\
-     \  visibility: hidden;\n\
-     \}\n\
-     \#options {\n\
-     \  left: 0;\n\
-     \  right: 0;\n\
-     \  bottom: 0;\n\
-     \  height: 36px;\n\
-     \}" :: String)
-
 -- | JS needed to set up CodeMirror.
 editorJS :: Html
 editorJS =
@@ -136,7 +111,9 @@ editorJS =
     \ matchBrackets: true,\n\
     \ theme: initTheme(),\n\
     \ tabMode: 'shift',\n\
-    \ extraKeys: {'Ctrl-Enter': compileOutput},\n\
+    \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-Space': toggleHintsAndCheckbox},\n\
     \});\n\
     \editor.focus();\n\
+    \initAutocompile();\n\
+    \initHints();\n\
     \initZoom();"

@@ -4,6 +4,99 @@ function compile(formTarget) {
   form.submit();
 }
 
+activeHint = null;
+function removeHint() {
+    if (activeHint) {
+      editor.removeLineWidget(activeHint);
+      activeHint = null;
+    }
+}
+
+function lookupType(reg) {
+  return docs[reg] ? docs[reg].type : null;
+}
+
+function lookupModule(reg) {
+  return docs[reg] && docs[reg].module != '' ? docs[reg].module + '.' : '';
+}
+
+
+function lookupDescription(reg) {
+  return docs[reg] ? docs[reg].desc : "-- no description";
+}
+
+function lookupReference(reg) {
+  return docs[reg] ? docs[reg].ref : "#";
+}
+
+function findPreviousToken(pos) {
+  while (! editor.getTokenAt(pos).type && pos.ch  > 0) {
+    pos.ch = pos.ch > 0 ? pos.ch - 1 : 0;
+  }
+  return editor.getTokenAt(pos);
+}
+
+function updateHints() {
+  editor.operation(function(){
+    removeHint();
+
+    pos = editor.getCursor();
+    token = findPreviousToken(pos);
+    if (token.type && lookupType(token.string)) {
+      hint = ""
+      if (token.type) {
+        hint = lookupModule(token.string)  + lookupType(token.string);
+      }
+      hintDetail = ""
+      if (token.type) {
+        hintDetail += lookupDescription(token.string)
+      }
+
+      var msg = document.createElement("div");
+      msg.className = "hint";
+
+      var msg_type = document.createElement("div");
+      msg_type.className = "hint_type";
+      msg_type.appendChild(document.createTextNode(hint));
+
+      var msg_detail = document.createElement("div");
+      msg_detail.className = "hint_text"
+      msg_detail.innerHTML = hintDetail;
+
+      msg.appendChild(msg_type);
+      msg.appendChild(msg_detail);
+
+      msg.onclick = function () {
+        window.open(lookupReference(token.string), 'elm-docs');
+      }
+
+      activeHint = editor.addLineWidget(editor.getCursor().line, msg, {coverGutter: false, noHScroll: true});
+    }
+  });
+
+  var info = editor.getScrollInfo();
+  var after = editor.charCoords({line: editor.getCursor().line + 1, ch: 0}, "local").top;
+  if (info.top + info.clientHeight < after) {
+    editor.scrollTo(null, after - info.clientHeight + 3);
+  }
+}
+
+function toggleHintsAndCheckbox()  {
+  var cb = document.getElementById('hints_checkbox');
+  cb.checked = cb.checked ? false : true;
+  toggleHints(cb.checked);
+}
+
+function toggleHints(enable) {
+  if (enable) {
+    editor.on('cursorActivity', updateHints);
+  } else {
+    editor.off('cursorActivity', updateHints);
+    removeHint();
+  }
+  cookie('hints', enable);
+};
+
 function toggleOptions(show) {
   var opts = document.getElementById('editor_options');
   opts.style.visibility = show ? 'visible' : 'hidden';
@@ -24,6 +117,7 @@ function toggleAutoUpdate(enable) {
   } else {
     editor.off('change', updateOutput);
   }
+  cookie('autocompile', enable);
 };
 
 function updateOutput() {
@@ -108,5 +202,21 @@ function initZoom() {
   if (zoom) {
     document.getElementById('editor_zoom').value = zoom;
     setZoom();
+  }
+}
+
+function initHints() {
+  var hints = readCookie('hints') == 'true';
+  if (hints) {
+    document.getElementById('hints_checkbox').checked = hints;
+    toggleHints(hints);
+  }
+}
+
+function initAutocompile() {
+  var auto = readCookie('autocompile') == 'true';
+  if (auto) {
+    document.getElementById('autocompile_checkbox').checked = auto;
+    toggleAutoUpdate(auto);
   }
 }

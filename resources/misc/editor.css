@@ -1,0 +1,72 @@
+body { margin: 0; }
+
+.CodeMirror { height: 100% }
+
+form { margin-bottom: 0; }
+.zoom-80 { font-size: 80%; }
+.zoom-100 { font-size: 100%; }
+.zoom-150 { font-size: 150%; }
+.zoom-200 { font-size: 200%; }
+.valign { vertical-align: middle; }
+
+.hint {
+  color: black;
+  font-family: helvetica, arial, sans-serif; 
+  font-size: 12px; 
+  background-color: white;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.75em;
+  border: thin solid rgb(200,200,200);
+}
+
+.hint_text {
+  padding-left: 0.75em;
+}
+
+.hint_type {
+  font-family: monospace; 
+  font-weight: bold; 
+  font-size: 13px; 
+  background-color: rgb(225,225,225);
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+  padding-left: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.hint pre {
+  background-color: rgb(245,245,245);
+  margin: 0 30px;
+  padding: 4px 10px;
+  border-left: solid 2px rgb(96,181,204);
+}
+
+.hint code {
+  white-space: pre;
+  font-family: monospace;
+}
+
+.opts {
+  background-color: rgb(216,221,225);
+  font-family: Arial;
+  font-size: 14px;
+  overflow: hidden;
+  position: absolute;
+}
+
+#editor_options {
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  padding: 4px;
+  visibility: hidden;
+}
+
+#options {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 36px;
+}" :: String)
+
