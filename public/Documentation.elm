@@ -3,12 +3,13 @@ import Website.Skeleton (addSpaces, skeleton)
 import Website.Tiles (tile)
 import List
 
-standard = ("General Purpose",
+standard = ("General",
   [ ("List",  "docs/Data/List.elm")
   , ("Dict",  "docs/Data/Dict.elm")
   , ("Set",  "docs/Data/Set.elm")
   , ("Char", "docs/Data/Char.elm")
   , ("Maybe", "docs/Data/Maybe.elm")
+  , ("Either", "docs/Data/Either.elm")
   , ("Date", "docs/Date.elm")
   , ("Prelude", "docs/Prelude.elm")
   ])
@@ -23,7 +24,9 @@ input = ("Interaction",
   [ ("Signal" , "docs/Signal/Signal.elm")
   , ("Automaton", "docs/Automaton.elm")
   , ("Mouse"  , "docs/Signal/Mouse.elm")
+  , ("Keyboard","docs/Signal/Keyboard.elm")
   , ("Keyboard.Raw", "docs/Signal/KeyboardRaw.elm")
+  , ("Touch"  , "docs/Signal/Touch.elm")
   , ("Window" , "docs/Signal/Window.elm")
   , ("Input"  , "docs/Signal/Input.elm")
   , ("Time"   , "docs/Signal/Time.elm")

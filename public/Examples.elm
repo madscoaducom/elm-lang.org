@@ -11,22 +11,26 @@ Elm's interactive editor allows you to learn Elm by seeing and modifying
 actual code. There are a couple categories of examples for designed to build
 certain skills.
 
-You may also want to take a look at the [overview of Elm&rsquo;s syntax][syntax]
-and some [basic examples][3] of their usage.
+You may also want to take a look at the [overview of Elm&rsquo;s syntax][syntax].
 
-[Basic][1] &#8212; the basic building blocks of Elm
+* [Basic][1]
 
-[Intermediate][2] &#8212; building components with Elm
+* [Intermediate][2]
 
-[Elm + JavaScript][4] &#8212; use existing JavaScript libraries, features, etc.
+* [Elm + JavaScript][4]
 
-[Elm + Haskell][5] &#8212; serve Elm code without leaving Haskell
+* [Elm + Haskell][5]
 
-[This Website][6] &#8212; the Elm source code for this site
+* [This Website][6]
 
-[Elm for Games][7] &#8212; how to make games in Elm
+* [Elm for Games][7]
 
 <br/>
+
+Grzegorz has created a great project called [Preselm][preselm] that uses
+Elm as a framework for online presentations. The [source is available][src]
+too! He has also created some cool [smaller examples][3] too.
+
 
   [1]: /examples/Basic.elm "Basic"
   [2]: /examples/Intermediate.elm "Intermediate"
@@ -37,6 +41,8 @@ and some [basic examples][3] of their usage.
   [7]: /blog/games-in-elm/part-0/Making-Pong.html "Elm for Games"
 
   [syntax]: /learn/Syntax.elm "The Syntax of Elm"
+  [preselm]: http://www.grzegorzbalcerek.net/preselm/Tutorial.html "Preselm"
+  [src]: https://github.com/grzegorzbalcerek/Preselm "Preselm Source"
 |]
 
 content w = width w words
