@@ -60,6 +60,7 @@ editor filePath code =
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
            H.div ! A.id "editor_box" ! A.style "position:absolute;top:0;left:0;right:0;bottom:36px;" $ do
              H.textarea ! A.name "input" ! A.id "input" $ toHtml ('\n':code)
+           H.div ! A.id "type_info" $ ""
            H.div ! A.class_ "opts" ! A.id "options" $ do
              H.div ! A.style "float:right; padding:6px;" $ do
                H.input ! A.class_ "valign" !
@@ -84,7 +85,7 @@ editor filePath code =
                   A.onchange "toggleOptions(this.checked);"
                H.span ! A.style "padding-left: 16px;" ! A.class_ "valign" !
                   A.title "Toggle with Ctrl+Space" $
-                    "Inline docs:"
+                    "Show type:"
                H.input ! A.class_ "valign" ! A.id "hints_checkbox" ! A.type_ "checkbox" !
                   A.title "Toggle with Ctrl+Space" !
                   A.onchange "toggleHints(this.checked);"
@@ -111,7 +112,7 @@ editorJS =
     \ matchBrackets: true,\n\
     \ theme: initTheme(),\n\
     \ tabMode: 'shift',\n\
-    \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-Space': toggleHintsAndCheckbox},\n\
+    \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-Space': toggleHintsAndCheckbox, 'Shift-Ctrl-Space': openDoc },\n\
     \});\n\
     \editor.focus();\n\
     \initAutocompile();\n\
