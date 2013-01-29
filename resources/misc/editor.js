@@ -27,42 +27,9 @@ function clearHint() {
 }
 
 function moduleRef (module) {
-  var moduleMap = {
-    'Prelude': '/docs/Prelude.elm',
-    'Maybe': '/docs/Data/Maybe.elm',
-    'List': '/docs/Data/List.elm',
-    'Dict': '/docs/Data/Dict.elm',
-    'Either': '/docs/Data/Either.elm',
-    'Set': '/docs/Data/Set.elm',
-    'Char': '/docs/Data/Char.elm',
-    'Javascript': '/docs/Foreign/Javascript.elm',
-    'Experimental': '/docs/Foreign/Javascript/Experimental.elm',
-    'JSON': '/docs/Foreign/Javascript/JSON.elm',
-    'Input': '/docs/Signal/Input.elm',
-    'Time': '/docs/Signal/Time.elm',
-    'Mouse': '/docs/Signal/Mouse.elm',
-    'HTTP': '/docs/Signal/HTTP.elm',
-    'Keyboard': '/docs/Signal/Keyboard.elm',
-    'KeyboardRaw': '/docs/Signal/KeyboardRaw.elm',
-    'Touch': '/docs/Signal/Touch.elm',
-    'Window': '/docs/Signal/Window.elm',
-    'Random': '/docs/Signal/Random.elm',
-    'Signal': '/docs/Signal/Signal.elm',
-    'Date': '/docs/Date.elm',
-    'Color': '/docs/Graphics/Color.elm',
-    'Text': '/docs/Graphics/Text.elm',
-    'Element': '/docs/Graphics/Element.elm',
-    'Graphics': '/docs/Graphics/Element.elm',
-    'JavaScript': '/docs/Foreign/JavaScript.elm',
-    'Experimental': '/docs/Foreign/JavaScript/Experimental.elm',
-    'JSON': '/docs/Foreign/JavaScript/JSON.elm',
-    'Automaton': '/docs/Automaton.elm',
-    'Syntax': '/learn/Syntax.elm'
-  };
-
-  var ref = moduleMap[module];
+  var ref = elmDocs.moduleToPageMap[module];
   if (! ref) {
-    console.log('moduleMap: unknown module: ' + module);
+    console.log('moduleToPageMap: unknown module: ' + module);
   }
   return ref;
 }
@@ -77,7 +44,7 @@ function lookupDocs(reg, type) {
     }];
   } else {
     if (reg) {
-      ds = docs.filter(function(x) { if (x.name == reg) return true; });
+      ds = elmDocs.docs.filter(function(x) { if (x.name == reg) return true; });
     }
   }
   return ds;
