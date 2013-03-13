@@ -1,4 +1,3 @@
-
 -- See this document for more information on making Pong:
 -- http://elm-lang.org/blog/games-in-elm/part-0/Making-Pong.html
 
@@ -25,12 +24,12 @@ data State = Play | Pause
 player x = { x = x, y = halfHeight, vx = 0, vy = 0, score = 0 }
 defaultGame =
   { state = Pause
-  , ball = { x = halfWidth, y = halfHeight, vx = 150, vy = 150 }
+  , ball = { x = halfWidth, y = halfHeight, vx = 200, vy = 200 }
   , playerL = player 20
   , playerR = player (gameWidth-20) }
 
 
--- Upates
+-- Updates
 
 stepObj t obj = let {x,y,vx,vy} = obj in
                 { obj | x <- x + vx*t, y <- y + vy*t }
@@ -72,7 +71,7 @@ stepGame (Input t (KeyInput space dirL dirR)) game =
 gameState = foldp stepGame defaultGame input
 
 
--- display
+-- Display
 
 pongGreen = rgb 60 100 60
 textGreen = rgb 160 200 160

@@ -6,16 +6,21 @@ intro = [markdown|
 
 ### The Elm Programming Language
 
-**Elm is a [functional reactive programming][frp] language meant to replace HTML/CSS/JavaScript.**
-Elm is optimized for creating [web][flow] [GUIs][canvas], [supporting complex user input][frp],
-and [avoiding callbacks][escape].
+Elm is a [functional reactive programming][frp] (FRP) language
+that compiles to HTML, CSS, and JS. [FRP][frp] is a
+concise and elegant way to [create][e1] [highly][e2]
+[interactive][e3] [applications][e4] and [avoid callbacks][escape].
 
-  [flow]:    /edit/examples/Elements/FlowDown2.elm "Flow down example"
-  [canvas]:  /edit/examples/Reactive/Transforms.elm "Canvas Example"
+Elm&rsquo;s [online editor](/try) and [extensive examples](/Examples.elm) make
+it easy to learn and use.
+
+  [games]: /blog/games-in-elm/part-0/Making-Pong.html "Pong"
   [escape]:  /learn/Escape-from-Callback-Hell.elm
-  [why-elm]: http://www.testblogpleaseignore.com/2012/06/21/why-elm/ "Why Elm?"
   [frp]:     /learn/What-is-FRP.elm "functional reactive programming"
-  [http]:    /edit/examples/JavaScript/ZipCodes.elm "HTTP requests"
+  [e1]: /edit/examples/Intermediate/Clock.elm
+  [e2]: /edit/examples/Intermediate/Mario.elm
+  [e3]: /edit/examples/Intermediate/Pong.elm
+  [e4]: /edit/examples/Intermediate/Flickr.elm
 
 |]
 
@@ -41,16 +46,17 @@ features = [markdown|
 
 news = [markdown|
 
-#### News
+#### What&rsquo;s new? What&rsquo;s interesting?
+
+[Elm at the mloc.js conference][mloc]: the basics of FRP and how to build purely functional games
 
 [Extensible Records in Elm 0.7][v7]
 
-Elm featured on [InfoQ][video] and [O&rsquo;Reilly Radar][radar]
-
-[Escape from Callback Hell][escape]: AJAX without callbacks
+Elm featured at [Emerging Languages conference][video] and on [O&rsquo;Reilly Radar][radar]
 
 [Making Pong in Elm][pong]: a comprehensive walkthrough
 
+  [mloc]: http://www.ustream.tv/recorded/29330499 "FRP basics / building a basic Mario game"
   [escape]: /learn/Escape-from-Callback-Hell.elm "Escape from Callback Hell"
   [pong]: /blog/games-in-elm/part-0/Making-Pong.html "Pong"
   [v7]: /blog/announce/version-0.7.elm "Extensible Records"
@@ -75,17 +81,15 @@ There are also tons of ways to [contribute to Elm](/Contribute.elm).
 
 exampleText = [markdown|
 
-#### Examples
+#### Interactive Examples
 
-Read, use, and edit real Elm programs online. Think about how
-you would implement the same things with HTML, CSS, and JavaScript.
-Tons more examples can be found [here](/Examples.elm).
-
+Read, use, and edit real Elm programs [online](/Examples.elm). Think about
+how you might implement the following programs with HTML, CSS, and JavaScript:
 |]
 
 infoqDesc = [markdown|
 
-#### Making the Web Functional
+#### Watch an Overview
 
 [An introduction to Elm][vid]. Why you should care. How it works. How to make cool stuff.
 The live examples came out a bit grainy, so follow along [here][exs].
@@ -106,10 +110,10 @@ with no set-up at all.
 examples = map (\(x,y) -> (x, y, "Intermediate/"))
   [ ("Analog Clock", "Clock")
   , ("Stamps", "Stamps")
-  , ("Slide Show", "SlideShow")
-  , ("Turtle", "Turtle")
   , ("Diagrams", "Physics")
-  , ("Quick Animations", "Slide")
+  , ("Turtle", "Turtle")
+  , ("Slide Show", "SlideShow")
+  , ("Walking", "Walk")
   ]
 
 content w =
@@ -119,7 +123,7 @@ content w =
 
 infoq w =
   let lnk = "http://www.infoq.com/presentations/Elm"
-      vid = image (min w 320) (min (round (toFloat w * 4/5)) 240) "/infoq.jpg"
+      vid = fittedImage w 210 "/infoq.jpg"
   in  width w infoqDesc `above` Graphics.link lnk vid
 
 download w =

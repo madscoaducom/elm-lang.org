@@ -4,24 +4,17 @@ import JSON
 
 {------------------------  Core Logic  ------------------------}
 
--- This is the core logic of the Elm program. You end up writing
--- way less code to create the entire application. Imagine
--- creating the same functionality and presentation with HTML,
--- CSS, and JavaScript.
+-- This is the core logic of the Elm program described here:
+--     http://elm-lang.org/learn/Escape-from-Callback-Hell.elm
 
 
 -- Asynchronously get a photo with a given tag. Makes two
 -- asynchronous HTTP requests to Flickr, resulting in
--- the URL of an image. This function uses the composition
--- operator:
---
---     f . g  ==  (\x -> f(g(x)))
---
--- to make things a bit more concise. You can read it from
--- right to left.
+-- the URL of an image.
 
-getPhotos =
-  lift sizesToPhoto . send . lift requestOneFrom . send . lift requestTag
+getPhotos tag = let photos = send (lift requestTag tag)
+                    sizes  = send (lift requestOneFrom photos)
+                in  lift sizesToPhoto sizes
 
 -- Create a text input box and a signal of tags, as seen in
 -- "Escape from Callback Hell".
@@ -78,9 +71,9 @@ requestTag tag =
 
 -- Take a list of photos and choose one, resulting in a request.
 requestOneFrom photoList =
-  let getPhotoID json =
-          case findArray "photo" (findObject "photos" json) of
-          { (JsonObject hd) : tl -> findString "id" hd ; _ -> "" }
+  let getPhotoID json = case findArray "photo" (findObject "photos" json) of
+                          JsonObject hd :: tl -> findString "id" hd
+                          _                   -> ""
       requestSizes id = if id == ""  then "" else
                         concat [ flickrRequest
                                , "&method=flickr.photos.getSizes&photo_id=", id ]
@@ -91,8 +84,8 @@ requestOneFrom photoList =
 sizesToPhoto sizeOptions =
   let getImg sizes =
           case reverse sizes of
-            _ : _ : _ : (JsonObject obj) : _ -> findString "source" obj
-            (JsonObject obj) : _ -> findString "source" obj
+            _ :: _ :: _ :: JsonObject obj :: _ -> findString "source" obj
+            JsonObject obj :: _ -> findString "source" obj
             _ -> "waiting.gif"
   in  getImg (findArray "size" (findObject "sizes" (extract sizeOptions)))
 

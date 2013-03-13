@@ -1,8 +1,7 @@
-
 import Website.Docs (createDocs2)
 
 directions =
-  [ ("arrows", "Signal { x :: Int, y :: Int }", [markdown|
+  [ ("arrows", "Signal { x:Int, y:Int }", [markdown|
 A signal of records indicating which arrow keys are pressed.
 
 `{ x = 0, y = 0 }` when pressing no arrows.<br>
@@ -10,7 +9,7 @@ A signal of records indicating which arrow keys are pressed.
 `{ x = 1, y = 1 }` when pressing the up and right arrows.<br>
 `{ x = 0, y =-1 }` when pressing the down,left, and right arrows.
 |])
-  , ("wasd", "Signal { x :: Int, y :: Int }", [markdown|
+  , ("wasd", "Signal { x:Int, y:Int }", [markdown|
 Just like the `arrows` signal, but this uses keys `w`, `a`,
 `s`, and `d`, which are common controls for many computer games.
 |])
@@ -27,7 +26,7 @@ categories = [ ("Directions", directions)
              ]
 
 intro = [markdown|
-These are nicely currated inputs from the keyboard.
+These are nicely curated inputs from the keyboard.
 See the [`Keyboard.Raw` library](/docs/Signal/KeyboardRaw.elm)
 for a lower-level interface that will let you define more
 complicated behavior.
