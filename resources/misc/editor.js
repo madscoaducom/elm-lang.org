@@ -19,13 +19,6 @@ function hideHint() {
   typeView.style.visibility = 'hidden';
 }
 
-function clearHint() {
-  hint = document.getElementById('type_info').firstChild;
-  if (hint) {
-    hint.parentNode.removeChild(hint);
-  }
-}
-
 function moduleRef (module) {
   var ref = elmDocs.moduleToPageMap[module];
   if (! ref) {
@@ -91,42 +84,111 @@ function openDoc () {
   }
 }
 
-function updateHints() {
-  var current_pos = editor.getCursor(true);
+function clearView(id) {
+  elem = document.getElementById(id);
+  if (elem) {
+    elem.innerHTML = '';
+  }
+}
 
-  clearHint();
+function generateView (content, contentIsHtml, outerCssClass, innerCssClass) {
+    var outerDiv = document.createElement("div");
+    outerDiv.className = outerCssClass;
 
-  var token = getTokenAtIgnoreSpace(current_pos);
-  var ds = token.type ? lookupDocs(token.string, token.type) : null;
-
-  if (ds && ds.length > 0) {
-
-    var hint = "";
-
-    if (ds.length > 1) {
-      var q = getQualifier(token, current_pos.line);
-      if (q) {
-        hint = q.string + ds.filter(function(o) { if (o.module == q.string.slice(0,-1)) return true;})[0].type;
-      } else {
-        hint = 'Ambiguous: ' + token.string + ' defined in ' + ds.map(function(o) { return o.module; }).join(' and ');
-      }
+    var innerDiv = document.createElement("div");
+    innerDiv.className = innerCssClass;
+    if (contentIsHtml) {
+      innerDiv.innerHTML = content;
     } else {
-      hint = ds[0].module ? ds[0].module + '.' : '';
-      hint += ds[0].type;
+      innerDiv.appendChild(document.createTextNode(content));
     }
 
-    var msg = document.createElement("div");
-    msg.className = "hint";
+    outerDiv.appendChild(innerDiv);
+    return outerDiv;
+}
 
-    var msg_type = document.createElement("div");
-    msg_type.className = "hint_type";
-    msg_type.appendChild(document.createTextNode(hint));
+function getDocForTokenAt (pos) {
+  var doc = null;
+  var token = getTokenAtIgnoreSpace(pos);
+  var docs = token.type ? lookupDocs(token.string, token.type) : null;
 
-    msg.appendChild(msg_type);
+  if (docs && docs.length > 0) {
 
-    var typeView = document.getElementById('type_info');
-    typeView.appendChild(msg);
+    if (docs.length > 1) {
+      var q = getQualifier(token, pos.line);
+
+      if (q) {
+        doc = docs.filter(function(o) { if (o.module == q.string.slice(0,-1)) return true;})[0];
+      } else {
+        doc = {};
+        doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return o.module; }).join(' and ');
+      }
+
+    } else {
+      doc = docs[0];
+    }
+
   }
+
+  return doc;
+}
+
+function showDoc () {
+  var current_pos = editor.getCursor(true);
+
+  clearView('doc_info');
+
+  var doc = getDocForTokenAt(current_pos);
+  var hint = "";
+  var desc = "";
+
+  if (doc && doc.error) {
+    hint = doc.error;
+  } else if (doc) {
+    hint = doc.module ? doc.module + '.' : '';
+    hint += doc.type;
+    desc = doc.desc;
+  }
+
+  var type_div = generateView(hint, false, 'hint', 'hint_type');
+
+  var doc_div = generateView(desc, true, 'doc', 'doc_type');
+
+  var docView = document.getElementById('doc_info');
+  docView.appendChild(type_div);
+  docView.appendChild(doc_div);
+  docView.style.visibility = 'visible';
+}
+
+function toggleDoc () {
+  var docView = document.getElementById('doc_info');
+  if (docView.style.visibility == 'hidden') {
+    showDoc();
+  } else {
+    clearView('doc_info');
+    docView.style.visibility = 'hidden';
+  }
+}
+
+function updateHints () {
+  var current_pos = editor.getCursor(true);
+
+  clearView('type_info');
+
+  var doc = getDocForTokenAt(current_pos);
+  var hint = "";
+
+  if (doc && doc.error) {
+    hint = doc.error;
+  } else if (doc) {
+    hint = doc.module ? doc.module + '.' : '';
+    hint += doc.type;
+  }
+
+  var msg = generateView(hint, false, 'hint', 'hint_type');
+
+  var typeView = document.getElementById('type_info');
+  typeView.appendChild(msg);
 }
 
 function toggleHintsAndCheckbox()  {
@@ -143,7 +205,7 @@ function toggleHints(enable) {
   } else {
     hideHint();
     editor.off('cursorActivity', updateHints);
-    clearHint();
+    clearHint('type_info');
   }
   cookie('hints', enable);
 };

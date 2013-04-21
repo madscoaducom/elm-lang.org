@@ -54,12 +54,13 @@ editor filePath code =
         H.script ! A.src "/codemirror-3.0/mode/elm/elm.js" $ mempty
         mapM_ (\theme -> H.link ! A.rel "stylesheet" ! A.href (toValue ("/codemirror-3.0/theme/" ++ theme ++ ".css" :: String))) themes
         H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/misc/editor.css"
-        H.script ! A.type_ "text/javascript" ! A.src "/misc/elm-docs.js" $ mempty
+        H.script ! A.type_ "text/javascript" ! A.src "/misc/elm-docs2.js" $ mempty
         H.script ! A.type_ "text/javascript" ! A.src "/misc/editor.js" $ mempty
       H.body $ do
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
            H.div ! A.id "editor_box" ! A.style "position:absolute;top:0;left:0;right:0;bottom:36px;" $ do
              H.textarea ! A.name "input" ! A.id "input" $ toHtml ('\n':code)
+           H.div ! A.id "doc_info" $ ""
            H.div ! A.id "type_info" $ ""
            H.div ! A.class_ "opts" ! A.id "options" $ do
              H.div ! A.style "float:right; padding:6px;" $ do
@@ -112,7 +113,7 @@ editorJS =
     \ matchBrackets: true,\n\
     \ theme: initTheme(),\n\
     \ tabMode: 'shift',\n\
-    \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-Space': toggleHintsAndCheckbox, 'Shift-Ctrl-Space': openDoc },\n\
+    \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDoc, 'Shift-Ctrl-K': openDoc },\n\
     \});\n\
     \editor.focus();\n\
     \initAutocompile();\n\

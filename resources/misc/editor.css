@@ -46,6 +46,20 @@ form { margin-bottom: 0; }
   visibility: hidden;
 }
 
+#doc_info {
+  bottom: 36px;
+  left: 0;
+  right: 0;
+  position: absolute;
+  border: 1px solid rgb(150,150,150);
+  border-top: 0px;
+  border-left: 0px;
+  border-right: 0px;
+  background-color: rgb(220,220,200);
+  visibility: hidden;
+  z-index: 10;
+}
+
 #editor_options {
   bottom: 28px;
   left: 0;
