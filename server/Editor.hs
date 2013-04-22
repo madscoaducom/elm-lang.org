@@ -54,7 +54,7 @@ editor filePath code =
         H.script ! A.src "/codemirror-3.0/mode/elm/elm.js" $ mempty
         mapM_ (\theme -> H.link ! A.rel "stylesheet" ! A.href (toValue ("/codemirror-3.0/theme/" ++ theme ++ ".css" :: String))) themes
         H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/misc/editor.css"
-        H.script ! A.type_ "text/javascript" ! A.src "/misc/elm-docs2.js" $ mempty
+        H.script ! A.type_ "text/javascript" ! A.src "https://raw.github.com/coreyti/showdown/master/src/showdown.js" $ mempty
         H.script ! A.type_ "text/javascript" ! A.src "/misc/editor.js" $ mempty
       H.body $ do
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
@@ -114,8 +114,9 @@ editorJS =
     \ theme: initTheme(),\n\
     \ tabMode: 'shift',\n\
     \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDoc, 'Shift-Ctrl-K': openDoc },\n\
-    \});\n\
-    \editor.focus();\n\
-    \initAutocompile();\n\
-    \initHints();\n\
-    \initZoom();"
+    \ });\n\
+    \ var markdown = new Showdown.converter();\n\
+    \ editor.focus();\n\
+    \ initAutocompile();\n\
+    \ initHints();\n\
+    \ initZoom();"

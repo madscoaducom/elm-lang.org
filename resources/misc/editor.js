@@ -1,3 +1,39 @@
+var elmDocs = null;
+
+var moduleToPageMap = {
+  'Prelude': '/docs/Prelude.elm',
+  'Maybe': '/docs/Data/Maybe.elm',
+  'List': '/docs/Data/List.elm',
+  'Dict': '/docs/Data/Dict.elm',
+  'Either': '/docs/Data/Either.elm',
+  'Set': '/docs/Data/Set.elm',
+  'Char': '/docs/Data/Char.elm',
+  'Javascript': '/docs/Foreign/Javascript.elm',
+  'Experimental': '/docs/Foreign/Javascript/Experimental.elm',
+  'JSON': '/docs/Foreign/Javascript/JSON.elm',
+  'Input': '/docs/Signal/Input.elm',
+  'Time': '/docs/Signal/Time.elm',
+  'Mouse': '/docs/Signal/Mouse.elm',
+  'HTTP': '/docs/Signal/HTTP.elm',
+  'Keyboard': '/docs/Signal/Keyboard.elm',
+  'KeyboardRaw': '/docs/Signal/KeyboardRaw.elm',
+  'Touch': '/docs/Signal/Touch.elm',
+  'Window': '/docs/Signal/Window.elm',
+  'Random': '/docs/Signal/Random.elm',
+  'Signal': '/docs/Signal/Signal.elm',
+  'Date': '/docs/Date.elm',
+  'Color': '/docs/Graphics/Color.elm',
+  'Text': '/docs/Graphics/Text.elm',
+  'Element': '/docs/Graphics/Element.elm',
+  'Graphics': '/docs/Graphics/Element.elm',
+  'JavaScript': '/docs/Foreign/JavaScript.elm',
+  'Experimental': '/docs/Foreign/JavaScript/Experimental.elm',
+  'JSON': '/docs/Foreign/JavaScript/JSON.elm',
+  'Automaton': '/docs/Automaton.elm',
+  'Syntax': '/learn/Syntax.elm' /* Pseudo module, used to open documentation when word is identified as 'keyword' by CodeMirror */
+};
+
+
 function compile(formTarget) {
   var form = document.getElementById('inputForm');
   form.target = formTarget;
@@ -17,6 +53,28 @@ function hideHint() {
   edb.style.bottom = '36px';
   editor.refresh();
   typeView.style.visibility = 'hidden';
+}
+
+function parseDoc(mods) {
+  var ds = mods.modules.map(function (m) {
+    var fs = m.values.map(function (f) {
+      return {name: f.name, type: f.type, module: m.name, desc: markdown.makeHtml(f.desc)};
+    });
+    return fs;
+  });
+
+  result = {};
+  result.docs = ds.reduce(function (acc, val) { return acc.concat(val); }, []);
+  result.modules = mods;
+  result.moduleToPageMap = moduleToPageMap;
+  return result;
+}
+
+function loadDoc () {
+  var req = new XMLHttpRequest();
+  req.onload = function () { elmDocs = parseDoc(JSON.parse(this.responseText)); }
+  req.open('GET', '/docs', true);
+  req.send()
 }
 
 function moduleRef (module) {
@@ -326,6 +384,7 @@ function initHints() {
   }
   var type_info = document.getElementById('type_info');
   type_info.onclick = openDoc;
+  loadDoc();
 }
 
 function initAutocompile() {
