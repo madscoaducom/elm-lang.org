@@ -49,10 +49,10 @@ editor filePath code =
     H.html $ do
       H.head $ do
         H.title . toHtml $ "Elm Editor: " ++ pageTitle filePath
-        H.link ! A.rel "stylesheet" ! A.href "/codemirror-3.0/lib/codemirror.css"
-        H.script ! A.src "/codemirror-3.0/lib/codemirror.js" $ mempty
-        H.script ! A.src "/codemirror-3.0/mode/elm/elm.js" $ mempty
-        mapM_ (\theme -> H.link ! A.rel "stylesheet" ! A.href (toValue ("/codemirror-3.0/theme/" ++ theme ++ ".css" :: String))) themes
+        H.link ! A.rel "stylesheet" ! A.href "/codemirror-3.x/lib/codemirror.css"
+        H.script ! A.src "/codemirror-3.x/lib/codemirror.js" $ mempty
+        H.script ! A.src "/codemirror-3.x/mode/elm/elm.js" $ mempty
+        mapM_ (\theme -> H.link ! A.rel "stylesheet" ! A.href (toValue ("/codemirror-3.x/theme/" ++ theme ++ ".css" :: String))) themes
         H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/misc/editor.css"
         H.script ! A.type_ "text/javascript" ! A.src "https://raw.github.com/coreyti/showdown/master/src/showdown.js" $ mempty
         H.script ! A.type_ "text/javascript" ! A.src "/misc/editor.js" $ mempty
