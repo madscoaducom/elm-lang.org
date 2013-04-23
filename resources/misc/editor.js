@@ -41,17 +41,18 @@ function compile(formTarget) {
 }
 
 function showHint() {
-  edb = document.getElementById('editor_box');
+  var edb = document.getElementById('editor_box');
   edb.style.bottom = '60px';
   editor.refresh();
-  typeView = document.getElementById('type_info');
+  var typeView = document.getElementById('type_info');
   typeView.style.visibility = 'visible';
 }
 
 function hideHint() {
-  edb = document.getElementById('editor_box');
+  var edb = document.getElementById('editor_box');
   edb.style.bottom = '36px';
   editor.refresh();
+  var typeView = document.getElementById('type_info');
   typeView.style.visibility = 'hidden';
 }
 
@@ -65,6 +66,8 @@ function parseDoc(mods) {
 
   result = {};
   result.docs = ds.reduce(function (acc, val) { return acc.concat(val); }, []);
+  var test_desc = markdown.makeHtml('This lets you reuse code, avoid repeating\ncomputations, and improve code readability.\n\n    let c = hypotenuse 3 4 in\n      c*c\n\n    let c1 = hypotenuse 7 12\n        c2 = hypotenuse 3 4\n    in  hypotenuse c1 c2\n\nLet-expressions are also indentation sensitive, so each definition\nshould align with the one above it.\n');
+  result.docs.push({name: 'let', type: 'Keyword', module: 'Syntax', desc:test_desc });
   result.modules = mods;
   result.moduleToPageMap = moduleToPageMap;
   return result;
@@ -87,7 +90,7 @@ function moduleRef (module) {
 
 function lookupDocs(reg, type) {
   var ds = null;
-  if (type == 'keyword') {
+  if (type == 'keyword' && reg != 'let') {
     ds = [{
       name: reg,
       type: 'Keyword',
@@ -143,26 +146,25 @@ function openDoc () {
 }
 
 function clearView(id) {
-  elem = document.getElementById(id);
+  var elem = document.getElementById(id);
   if (elem) {
     elem.innerHTML = '';
   }
 }
 
-function generateView (content, contentIsHtml, outerCssClass, innerCssClass) {
-    var outerDiv = document.createElement("div");
-    outerDiv.className = outerCssClass;
+function clearDocView () {
+  clearView('doc_info');
+}
 
-    var innerDiv = document.createElement("div");
-    innerDiv.className = innerCssClass;
+function generateView (content, contentIsHtml, cssClass) {
+    var div = document.createElement("div");
+    div.className = cssClass;
     if (contentIsHtml) {
-      innerDiv.innerHTML = content;
+      div.innerHTML = content;
     } else {
-      innerDiv.appendChild(document.createTextNode(content));
+      div.appendChild(document.createTextNode(content));
     }
-
-    outerDiv.appendChild(innerDiv);
-    return outerDiv;
+    return div;
 }
 
 function getDocForTokenAt (pos) {
@@ -191,6 +193,12 @@ function getDocForTokenAt (pos) {
   return doc;
 }
 
+function typeAsText (doc) {
+  var result = doc.module ? doc.module + '.' : '';
+  result += doc.name + ' : ' + doc.type;
+  return result;
+}
+
 function showDoc () {
   var current_pos = editor.getCursor(true);
 
@@ -203,14 +211,19 @@ function showDoc () {
   if (doc && doc.error) {
     hint = doc.error;
   } else if (doc) {
-    hint = doc.module ? doc.module + '.' : '';
-    hint += doc.type;
+    hint = typeAsText(doc);
     desc = doc.desc;
+    if (!desc || desc == "") {
+      desc = 'No description found';
+    }
+  } else {
+    return;
   }
 
-  var type_div = generateView(hint, false, 'hint', 'hint_type');
 
-  var doc_div = generateView(desc, true, 'doc', 'doc_type');
+  var type_div = generateView(hint, false, 'doc_type');
+
+  var doc_div = generateView(desc, true, 'doc');
 
   var docView = document.getElementById('doc_info');
   docView.appendChild(type_div);
@@ -239,11 +252,10 @@ function updateHints () {
   if (doc && doc.error) {
     hint = doc.error;
   } else if (doc) {
-    hint = doc.module ? doc.module + '.' : '';
-    hint += doc.type;
+    hint = typeAsText(doc);
   }
 
-  var msg = generateView(hint, false, 'hint', 'hint_type');
+  var msg = generateView(hint, false, 'doc_type');
 
   var typeView = document.getElementById('type_info');
   typeView.appendChild(msg);
@@ -263,9 +275,8 @@ function toggleHints(enable) {
   } else {
     hideHint();
     editor.off('cursorActivity', updateHints);
-    clearHint('type_info');
   }
-  cookie('hints', enable);
+  cookie('showtype', enable);
 };
 
 function toggleOptions(show) {
@@ -377,7 +388,7 @@ function initZoom() {
 }
 
 function initHints() {
-  var hints = readCookie('hints') == 'true';
+  var hints = readCookie('showtype') == 'true';
   if (hints) {
     document.getElementById('hints_checkbox').checked = hints;
     toggleHints(hints);
@@ -394,3 +405,8 @@ function initAutocompile() {
     toggleAutoUpdate(auto);
   }
 }
+
+function initEditor() {
+  editor.on('cursorActivity', clearDocView);
+}
+

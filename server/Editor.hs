@@ -108,7 +108,7 @@ editor filePath code =
 -- | JS needed to set up CodeMirror.
 editorJS :: Html
 editorJS =
-    "var editor = CodeMirror.fromTextArea(document.getElementById('input'), {\n\
+    " var editor = CodeMirror.fromTextArea(document.getElementById('input'), {\n\
     \ lineNumbers: initLines(),\n\
     \ matchBrackets: true,\n\
     \ theme: initTheme(),\n\
@@ -117,6 +117,7 @@ editorJS =
     \ });\n\
     \ var markdown = new Showdown.converter();\n\
     \ editor.focus();\n\
+    \ initEditor();\n\
     \ initAutocompile();\n\
     \ initHints();\n\
     \ initZoom();"
