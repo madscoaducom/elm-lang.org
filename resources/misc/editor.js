@@ -1,3 +1,10 @@
+/* exported initEditor */
+/* exported toggleOptions */
+/* exported toggleLines */
+/* exported setTheme */
+/* exported eraseCookie */
+
+var editor = null;
 var elmDocs = null;
 
 var moduleToPageMap = {
@@ -27,8 +34,6 @@ var moduleToPageMap = {
   'Element': '/docs/Graphics/Element.elm',
   'Graphics': '/docs/Graphics/Element.elm',
   'JavaScript': '/docs/Foreign/JavaScript.elm',
-  'Experimental': '/docs/Foreign/JavaScript/Experimental.elm',
-  'JSON': '/docs/Foreign/JavaScript/JSON.elm',
   'Automaton': '/docs/Automaton.elm',
   'Syntax': '/learn/Syntax.elm' /* Pseudo module, used to open documentation when word is identified as 'keyword' by CodeMirror */
 };
@@ -57,6 +62,7 @@ function hideHint() {
 }
 
 function parseDoc(mods) {
+  var markdown = new Showdown.converter();
   var ds = mods.modules.map(function (m) {
     var fs = m.values.map(function (f) {
       return {name: f.name, type: f.type, module: m.name, desc: markdown.makeHtml(f.desc)};
@@ -64,7 +70,7 @@ function parseDoc(mods) {
     return fs;
   });
 
-  result = {};
+  var result = {};
   result.docs = ds.reduce(function (acc, val) { return acc.concat(val); }, []);
   var test_desc = markdown.makeHtml('This lets you reuse code, avoid repeating\ncomputations, and improve code readability.\n\n    let c = hypotenuse 3 4 in\n      c*c\n\n    let c1 = hypotenuse 7 12\n        c2 = hypotenuse 3 4\n    in  hypotenuse c1 c2\n\nLet-expressions are also indentation sensitive, so each definition\nshould align with the one above it.\n');
   result.docs.push({name: 'let', type: 'Keyword', module: 'Syntax', desc:test_desc });
@@ -75,9 +81,9 @@ function parseDoc(mods) {
 
 function loadDoc () {
   var req = new XMLHttpRequest();
-  req.onload = function () { elmDocs = parseDoc(JSON.parse(this.responseText)); }
+  req.onload = function () { elmDocs = parseDoc(JSON.parse(this.responseText)); };
   req.open('GET', '/docs', true);
-  req.send()
+  req.send();
 }
 
 function moduleRef (module) {
@@ -94,7 +100,7 @@ function lookupDocs(reg, type) {
     ds = [{
       name: reg,
       type: 'Keyword',
-      module: 'Syntax',
+      module: 'Syntax'
     }];
   } else {
     if (reg) {
@@ -213,7 +219,7 @@ function showDoc () {
   } else if (doc) {
     hint = typeAsText(doc);
     desc = doc.desc;
-    if (!desc || desc == "") {
+    if (!desc || desc === "") {
       desc = 'No description found';
     }
   } else {
@@ -261,12 +267,6 @@ function updateHints () {
   typeView.appendChild(msg);
 }
 
-function toggleHintsAndCheckbox()  {
-  var cb = document.getElementById('hints_checkbox');
-  cb.checked = cb.checked ? false : true;
-  toggleHints(cb.checked);
-}
-
 function toggleHints(enable) {
   if (enable) {
     showHint();
@@ -277,7 +277,7 @@ function toggleHints(enable) {
     editor.off('cursorActivity', updateHints);
   }
   cookie('showtype', enable);
-};
+}
 
 function toggleOptions(show) {
   var opts = document.getElementById('editor_options');
@@ -289,7 +289,7 @@ function toggleOptions(show) {
 function toggleLines(on) {
   editor.setOption('lineNumbers', on);
   cookie('lineNumbers', on);
-};
+}
 
 var delay;
 function toggleAutoUpdate(enable) {
@@ -300,23 +300,23 @@ function toggleAutoUpdate(enable) {
     editor.off('change', updateOutput);
   }
   cookie('autocompile', enable);
-};
+}
 
 function updateOutput() {
   clearTimeout(delay);
   delay = setTimeout(compileOutput, 1000);
-};
+}
 
 function compileOutput() {
   compile('output');
-};
+}
 
 function setTheme() {
   var input = document.getElementById('editor_theme');
   var theme = input.options[input.selectedIndex].innerHTML;
   editor.setOption('theme', theme);
   cookie('theme', theme);
-};
+}
 
 function setZoom() {
   var editorDiv  = document.getElementsByClassName('CodeMirror')[0],
@@ -331,18 +331,18 @@ function setZoom() {
   newClasses.push(zoom);
   editorDiv.setAttribute('class', newClasses.join(' '));
   cookie('zoom', zoomLevel);
-};
+}
 
 function cookie(name,value) { createCookie(name, value, 5*365); }
 
 function createCookie(name,value,days) {
+  var expires = "";
   if (days) {
     var date = new Date();
     date.setTime(date.getTime()+(days*24*60*60*1000));
-    var expires = "; expires="+date.toGMTString();
+    expires = "; expires=" + date.toGMTString();
   }
-  else var expires = "";
-  document.cookie = name+"="+value+expires+"; path=/";
+  document.cookie = name + "=" + value + expires + "; path=/";
 }
 
 function readCookie(name) {
@@ -351,7 +351,7 @@ function readCookie(name) {
   for(var i=0;i < ca.length;i++) {
     var c = ca[i];
     while (c.charAt(0)==' ') c = c.substring(1,c.length);
-    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length,c.length);
   }
   return null;
 }
@@ -407,6 +407,18 @@ function initAutocompile() {
 }
 
 function initEditor() {
+  // global scope editor
+  editor = CodeMirror.fromTextArea(document.getElementById('input'),
+    { lineNumbers: initLines(),
+      matchBrackets: true,
+      theme: initTheme(),
+      tabMode: 'shift',
+      extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDoc, 'Shift-Ctrl-K': openDoc }
+    });
+  editor.focus();
   editor.on('cursorActivity', clearDocView);
+  initAutocompile();
+  initHints();
+  initZoom();
 }
 

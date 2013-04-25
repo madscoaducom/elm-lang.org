@@ -54,7 +54,7 @@ editor filePath code =
         H.script ! A.src "/codemirror-3.x/mode/elm/elm.js" $ mempty
         mapM_ (\theme -> H.link ! A.rel "stylesheet" ! A.href (toValue ("/codemirror-3.x/theme/" ++ theme ++ ".css" :: String))) themes
         H.link ! A.rel "stylesheet" ! A.type_ "text/css" ! A.href "/misc/editor.css"
-        H.script ! A.type_ "text/javascript" ! A.src "https://raw.github.com/coreyti/showdown/master/src/showdown.js" $ mempty
+        H.script ! A.type_ "text/javascript" ! A.src "/misc/showdown.js" $ mempty
         H.script ! A.type_ "text/javascript" ! A.src "/misc/editor.js" $ mempty
       H.body $ do
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
@@ -103,21 +103,4 @@ editor filePath code =
                H.input ! A.class_ "valign" ! A.id "editor_lines" !
                  A.type_ "checkbox" !
                  A.onchange "toggleLines(this.checked);"
-        H.script ! A.type_ "text/javascript" $ editorJS
-
--- | JS needed to set up CodeMirror.
-editorJS :: Html
-editorJS =
-    " var editor = CodeMirror.fromTextArea(document.getElementById('input'), {\n\
-    \ lineNumbers: initLines(),\n\
-    \ matchBrackets: true,\n\
-    \ theme: initTheme(),\n\
-    \ tabMode: 'shift',\n\
-    \ extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDoc, 'Shift-Ctrl-K': openDoc },\n\
-    \ });\n\
-    \ var markdown = new Showdown.converter();\n\
-    \ editor.focus();\n\
-    \ initEditor();\n\
-    \ initAutocompile();\n\
-    \ initHints();\n\
-    \ initZoom();"
+        H.script ! A.type_ "text/javascript" $ "initEditor();"
