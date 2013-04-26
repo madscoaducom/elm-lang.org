@@ -38,20 +38,25 @@ function compile(formTarget) {
   form.submit();
 }
 
-function showTypeView() {
+function setEditorBottom() {
+  var typeView = document.getElementById('doc_type');
+  var opts = document.getElementById('editor_options');
   var edb = document.getElementById('editor_box');
-  edb.style.bottom = '60px';
+  visible = typeView.style.visibility === 'visible' || opts.style.visibility === 'visible';
+  edb.style.bottom = visible ? '60px' : '36px';
   editor.refresh();
+}
+
+function showTypeView() {
   var typeView = document.getElementById('doc_type');
   typeView.style.visibility = 'visible';
+  setEditorBottom();
 }
 
 function hideTypeView() {
-  var edb = document.getElementById('editor_box');
-  edb.style.bottom = '36px';
-  editor.refresh();
   var typeView = document.getElementById('doc_type');
   typeView.style.visibility = 'hidden';
+  setEditorBottom();
 }
 
 function parseDoc(mods) {
@@ -270,8 +275,7 @@ function toggleExamples(open) {
 function toggleOptions(show) {
   var opts = document.getElementById('editor_options');
   opts.style.visibility = show ? 'visible' : 'hidden';
-  var box = document.getElementById('editor_box');
-  box.style.bottom = show ? '60px' : '36px';
+  setEditorBottom();
 }
 
 function toggleLines(on) {
