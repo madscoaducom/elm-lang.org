@@ -224,11 +224,11 @@ function showDoc () {
 
 function toggleDocView () {
   var docView = document.getElementById('doc_desc');
-  if (docView.style.visibility == 'hidden') {
-    showDoc();
-  } else {
+  if (docView.style.visibility == 'visible') {
     clearView('doc_desc');
     docView.style.visibility = 'hidden';
+  } else {
+    showDoc();
   }
 }
 
