@@ -263,6 +263,10 @@ function toggleShowType(enable) {
   cookie('showtype', enable);
 }
 
+function toggleExamples(open) {
+  window.top.document.getElementById('frameset1').rows = open ? '*,160px' : '*,0';
+}
+
 function toggleOptions(show) {
   var opts = document.getElementById('editor_options');
   opts.style.visibility = show ? 'visible' : 'hidden';
@@ -390,6 +394,18 @@ function initAutocompile() {
   }
 }
 
+function initOptions() {
+  var options = document.getElementById('options_checkbox');
+  options.checked = false;
+  toggleOptions(document.getElementById('options_checkbox').checked);
+}
+
+function initExamples() {
+  var examples = document.getElementById('examples_checkbox');
+  examples.checked = false;
+  toggleExamples(document.getElementById('examples_checkbox').checked);
+}
+
 function initEditor() {
   // global scope editor
   editor = CodeMirror.fromTextArea(document.getElementById('input'),
@@ -404,6 +420,8 @@ function initEditor() {
   initAutocompile();
   initTypeView();
   initZoom();
+  initOptions();
+  initExamples();
 }
 
 /* jshint browser: true */

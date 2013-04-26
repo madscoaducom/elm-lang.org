@@ -24,10 +24,6 @@ ideBuilder title input output =
     H.docTypeHtml $ do
       H.head $ do
         H.title . toHtml $ title
-        H.script ! A.type_ "text/javascript" $
-             "function toggleExamples(open) {\n\
-             \  document.getElementById('frameset1').rows = open ? '*,160px' : '*,0';\n\
-             \};"
       preEscapedToMarkup $ 
          concat [ "<frameset id=\"frameset1\" rows=\"*,0\">\n"
                 , "  <frameset cols=\"50%,50%\">\n"
@@ -78,18 +74,12 @@ editor filePath code =
              H.div ! A.style "float:left; padding:10px;" $ do
                H.span ! A.title "Show the basic examples" $ do
                   H.span ! A.class_ "valign" $ "Examples:"
-                  H.input ! A.class_ "valign" ! A.type_ "checkbox" !
-                     A.onchange "window.top.toggleExamples(this.checked);"
+                  H.input ! A.class_ "valign" ! A.id "examples_checkbox" ! A.type_ "checkbox" !
+                     A.onchange "toggleExamples(this.checked);"
                H.span ! A.style "padding-left: 16px;" ! A.class_ "valign" $
                     "Options:"
-               H.input ! A.class_ "valign" ! A.type_ "checkbox" !
+               H.input ! A.class_ "valign" ! A.id "options_checkbox" ! A.type_ "checkbox" !
                   A.onchange "toggleOptions(this.checked);"
-               H.span ! A.style "padding-left: 16px;" ! A.class_ "valign" !
-                  A.title "Toggle with Ctrl+Space" $
-                    "Show type:"
-               H.input ! A.class_ "valign" ! A.id "show_type_checkbox" ! A.type_ "checkbox" !
-                  A.title "Toggle with Ctrl+Space" !
-                  A.onchange "toggleShowType(this.checked);"
            H.div ! A.class_ "opts" ! A.id "editor_options" $ do
              let optionFor text =
                    H.option ! A.value (toValue (text :: String)) $
@@ -103,4 +93,8 @@ editor filePath code =
                H.input ! A.class_ "valign" ! A.id "editor_lines" !
                  A.type_ "checkbox" !
                  A.onchange "toggleLines(this.checked);"
+               H.span ! A.style "padding-left: 16px;" ! A.class_ "valign" $
+                    "Show type:"
+               H.input ! A.class_ "valign" ! A.id "show_type_checkbox" ! A.type_ "checkbox" !
+                  A.onchange "toggleShowType(this.checked);"
         H.script ! A.type_ "text/javascript" $ "initEditor();"
