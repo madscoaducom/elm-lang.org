@@ -1,13 +1,7 @@
-/* exported initEditor */
-/* exported toggleOptions */
-/* exported toggleLines */
-/* exported setTheme */
-/* exported eraseCookie */
-
 var editor = null;
 var elmDocs = null;
 
-var moduleToPageMap = {
+var elmModuleToPageMap = {
   'Prelude': '/docs/Prelude.elm',
   'Maybe': '/docs/Data/Maybe.elm',
   'List': '/docs/Data/List.elm',
@@ -38,26 +32,25 @@ var moduleToPageMap = {
   'Syntax': '/learn/Syntax.elm' /* Pseudo module, used to open documentation when word is identified as 'keyword' by CodeMirror */
 };
 
-
 function compile(formTarget) {
   var form = document.getElementById('inputForm');
   form.target = formTarget;
   form.submit();
 }
 
-function showHint() {
+function showTypeView() {
   var edb = document.getElementById('editor_box');
   edb.style.bottom = '60px';
   editor.refresh();
-  var typeView = document.getElementById('type_info');
+  var typeView = document.getElementById('doc_type');
   typeView.style.visibility = 'visible';
 }
 
-function hideHint() {
+function hideTypeView() {
   var edb = document.getElementById('editor_box');
   edb.style.bottom = '36px';
   editor.refresh();
-  var typeView = document.getElementById('type_info');
+  var typeView = document.getElementById('doc_type');
   typeView.style.visibility = 'hidden';
 }
 
@@ -75,7 +68,7 @@ function parseDoc(mods) {
   var test_desc = markdown.makeHtml('This lets you reuse code, avoid repeating\ncomputations, and improve code readability.\n\n    let c = hypotenuse 3 4 in\n      c*c\n\n    let c1 = hypotenuse 7 12\n        c2 = hypotenuse 3 4\n    in  hypotenuse c1 c2\n\nLet-expressions are also indentation sensitive, so each definition\nshould align with the one above it.\n');
   result.docs.push({name: 'let', type: 'Keyword', module: 'Syntax', desc:test_desc });
   result.modules = mods;
-  result.moduleToPageMap = moduleToPageMap;
+  result.elmModuleToPageMap = elmModuleToPageMap;
   return result;
 }
 
@@ -87,24 +80,24 @@ function loadDoc () {
 }
 
 function moduleRef (module) {
-  var ref = elmDocs.moduleToPageMap[module];
+  var ref = elmDocs.elmModuleToPageMap[module];
   if (! ref) {
-    console.log('moduleToPageMap: unknown module: ' + module);
+    console.log('elmModuleToPageMap: unknown module: ' + module);
   }
   return ref;
 }
 
-function lookupDocs(reg, type) {
+function lookupDocs(token, type) {
   var ds = null;
-  if (type == 'keyword' && reg != 'let') {
+  if (type == 'keyword' && token != 'let') {
     ds = [{
-      name: reg,
+      name: token,
       type: 'Keyword',
       module: 'Syntax'
     }];
   } else {
-    if (reg) {
-      ds = elmDocs.docs.filter(function(x) { if (x.name == reg) return true; });
+    if (token) {
+      ds = elmDocs.docs.filter(function(x) { if (x.name == token) return true; });
     }
   }
   return ds;
@@ -131,7 +124,7 @@ function getTokenAtIgnoreSpace (pos) {
   return token;
 }
 
-function openDoc () {
+function openDocPage () {
   var current_pos = editor.getCursor(true);
   var token = getTokenAtIgnoreSpace(current_pos);
   var ds = token.type ? lookupDocs(token.string, token.type) : null;
@@ -159,7 +152,7 @@ function clearView(id) {
 }
 
 function clearDocView () {
-  clearView('doc_info');
+  clearView('doc_desc');
 }
 
 function generateView (content, contentIsHtml, cssClass) {
@@ -179,23 +172,18 @@ function getDocForTokenAt (pos) {
   var docs = token.type ? lookupDocs(token.string, token.type) : null;
 
   if (docs && docs.length > 0) {
-
     if (docs.length > 1) {
       var q = getQualifier(token, pos.line);
-
       if (q) {
         doc = docs.filter(function(o) { if (o.module == q.string.slice(0,-1)) return true;})[0];
       } else {
         doc = {};
         doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return o.module; }).join(' and ');
       }
-
     } else {
       doc = docs[0];
     }
-
   }
-
   return doc;
 }
 
@@ -207,17 +195,16 @@ function typeAsText (doc) {
 
 function showDoc () {
   var current_pos = editor.getCursor(true);
-
-  clearView('doc_info');
+  clearView('doc_desc');
 
   var doc = getDocForTokenAt(current_pos);
-  var hint = "";
+  var typeText = "";
   var desc = "";
 
   if (doc && doc.error) {
-    hint = doc.error;
+    typeText = doc.error;
   } else if (doc) {
-    hint = typeAsText(doc);
+    typeText = typeAsText(doc);
     desc = doc.desc;
     if (!desc || desc === "") {
       desc = 'No description found';
@@ -226,55 +213,52 @@ function showDoc () {
     return;
   }
 
-
-  var type_div = generateView(hint, false, 'doc_type');
-
+  var type_div = generateView(typeText, false, 'doc_type');
   var doc_div = generateView(desc, true, 'doc');
+  var docView = document.getElementById('doc_desc');
 
-  var docView = document.getElementById('doc_info');
   docView.appendChild(type_div);
   docView.appendChild(doc_div);
   docView.style.visibility = 'visible';
 }
 
-function toggleDoc () {
-  var docView = document.getElementById('doc_info');
+function toggleDocView () {
+  var docView = document.getElementById('doc_desc');
   if (docView.style.visibility == 'hidden') {
     showDoc();
   } else {
-    clearView('doc_info');
+    clearView('doc_desc');
     docView.style.visibility = 'hidden';
   }
 }
 
-function updateHints () {
+function updateTypeView () {
   var current_pos = editor.getCursor(true);
 
-  clearView('type_info');
+  clearView('doc_type');
 
   var doc = getDocForTokenAt(current_pos);
-  var hint = "";
+  var typeText = "";
 
   if (doc && doc.error) {
-    hint = doc.error;
+    typeText = doc.error;
   } else if (doc) {
-    hint = typeAsText(doc);
+    typeText = typeAsText(doc);
   }
 
-  var msg = generateView(hint, false, 'doc_type');
-
-  var typeView = document.getElementById('type_info');
-  typeView.appendChild(msg);
+  var type_div = generateView(typeText, false, 'doc_type');
+  var typeView = document.getElementById('doc_type');
+  typeView.appendChild(type_div);
 }
 
-function toggleHints(enable) {
+function toggleShowType(enable) {
   if (enable) {
-    showHint();
-    editor.on('cursorActivity', updateHints);
-    updateHints();
+    showTypeView();
+    editor.on('cursorActivity', updateTypeView);
+    updateTypeView();
   } else {
-    hideHint();
-    editor.off('cursorActivity', updateHints);
+    hideTypeView();
+    editor.off('cursorActivity', updateTypeView);
   }
   cookie('showtype', enable);
 }
@@ -292,7 +276,7 @@ function toggleLines(on) {
 }
 
 var delay;
-function toggleAutoUpdate(enable) {
+function toggleAutoCompile(enable) {
   document.getElementById('compile_button').disabled = enable;
   if (enable) {
     editor.on('change', updateOutput);
@@ -387,14 +371,14 @@ function initZoom() {
   }
 }
 
-function initHints() {
-  var hints = readCookie('showtype') == 'true';
-  if (hints) {
-    document.getElementById('hints_checkbox').checked = hints;
-    toggleHints(hints);
+function initTypeView() {
+  var showType = readCookie('showtype') == 'true';
+  if (showType) {
+    document.getElementById('show_type_checkbox').checked = showType;
+    toggleShowType(showType);
   }
-  var type_info = document.getElementById('type_info');
-  type_info.onclick = openDoc;
+  var doc_type = document.getElementById('doc_type');
+  doc_type.onclick = openDocPage;
   loadDoc();
 }
 
@@ -402,7 +386,7 @@ function initAutocompile() {
   var auto = readCookie('autocompile') == 'true';
   if (auto) {
     document.getElementById('autocompile_checkbox').checked = auto;
-    toggleAutoUpdate(auto);
+    toggleAutoCompile(auto);
   }
 }
 
@@ -413,12 +397,24 @@ function initEditor() {
       matchBrackets: true,
       theme: initTheme(),
       tabMode: 'shift',
-      extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDoc, 'Shift-Ctrl-K': openDoc }
+      extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDocView, 'Shift-Ctrl-K': openDocPage }
     });
   editor.focus();
   editor.on('cursorActivity', clearDocView);
   initAutocompile();
-  initHints();
+  initTypeView();
   initZoom();
 }
 
+/* jshint browser: true */
+/* jshint devel: true */
+/* jshint undef: true */
+/* jshint unused: true */
+/* jshint unused: true */
+/* global CodeMirror */
+/* global Showdown */
+/* exported initEditor */
+/* exported toggleOptions */
+/* exported toggleLines */
+/* exported setTheme */
+/* exported eraseCookie */

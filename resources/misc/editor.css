@@ -34,7 +34,7 @@ form { margin-bottom: 0; }
 }
 
 
-#type_info {
+#doc_type {
   bottom: 36px;
   left: 0;
   right: 0;
@@ -59,7 +59,7 @@ form { margin-bottom: 0; }
   margin: 4px;
 }
 
-#doc_info .doc_type {
+#doc_desc .doc_type {
   margin: 0;
   margin-bottom: 4px;
   padding: 2px 4px;
@@ -69,7 +69,7 @@ form { margin-bottom: 0; }
   border-right: 0px;
 }
 
-#doc_info {
+#doc_desc {
 	font-family: calibri,helvetica,arial,sans-serif;
   bottom: 36px;
   left: 0;

@@ -60,8 +60,8 @@ editor filePath code =
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
            H.div ! A.id "editor_box" ! A.style "position:absolute;top:0;left:0;right:0;bottom:36px;" $ do
              H.textarea ! A.name "input" ! A.id "input" $ toHtml ('\n':code)
-           H.div ! A.id "doc_info" $ ""
-           H.div ! A.id "type_info" $ ""
+           H.div ! A.id "doc_desc" $ ""
+           H.div ! A.id "doc_type" $ ""
            H.div ! A.class_ "opts" ! A.id "options" $ do
              H.div ! A.style "float:right; padding:6px;" $ do
                H.input ! A.class_ "valign" !
@@ -74,7 +74,7 @@ editor filePath code =
                   A.title "compile in a new tab"
                H.span  ! A.class_ "valign" $ " Auto-compile:"
                H.input ! A.class_ "valign" ! A.id "autocompile_checkbox" ! A.type_ "checkbox" !
-                  A.onchange "toggleAutoUpdate(this.checked)"
+                  A.onchange "toggleAutoCompile(this.checked)"
              H.div ! A.style "float:left; padding:10px;" $ do
                H.span ! A.title "Show the basic examples" $ do
                   H.span ! A.class_ "valign" $ "Examples:"
@@ -87,9 +87,9 @@ editor filePath code =
                H.span ! A.style "padding-left: 16px;" ! A.class_ "valign" !
                   A.title "Toggle with Ctrl+Space" $
                     "Show type:"
-               H.input ! A.class_ "valign" ! A.id "hints_checkbox" ! A.type_ "checkbox" !
+               H.input ! A.class_ "valign" ! A.id "show_type_checkbox" ! A.type_ "checkbox" !
                   A.title "Toggle with Ctrl+Space" !
-                  A.onchange "toggleHints(this.checked);"
+                  A.onchange "toggleShowType(this.checked);"
            H.div ! A.class_ "opts" ! A.id "editor_options" $ do
              let optionFor text =
                    H.option ! A.value (toValue (text :: String)) $
