@@ -24,7 +24,7 @@ main = simpleHTTP nullConf $ do
               , serveDirectory DisableBrowsing [] "resources"
               , dir "try" (ok $ toResponse $ emptyIDE)
               , dir "compile" $ compilePart
-              , dir "docs" $ serveFile (asContentType "text/json") docsPath
+              , dir "jsondocs" $ serveFile (asContentType "text/json") docsPath
               , dir "edit" . uriRest $ withFile ide
               , dir "code" . uriRest $ withFile editor
               , dir "login" sayHi

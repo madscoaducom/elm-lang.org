@@ -1,37 +1,6 @@
 var editor = null;
 var elmDocs = null;
 
-var elmModuleToPageMap = {
-  'Prelude': '/docs/Prelude.elm',
-  'Maybe': '/docs/Data/Maybe.elm',
-  'List': '/docs/Data/List.elm',
-  'Dict': '/docs/Data/Dict.elm',
-  'Either': '/docs/Data/Either.elm',
-  'Set': '/docs/Data/Set.elm',
-  'Char': '/docs/Data/Char.elm',
-  'Javascript': '/docs/Foreign/Javascript.elm',
-  'Experimental': '/docs/Foreign/Javascript/Experimental.elm',
-  'JSON': '/docs/Foreign/Javascript/JSON.elm',
-  'Input': '/docs/Signal/Input.elm',
-  'Time': '/docs/Signal/Time.elm',
-  'Mouse': '/docs/Signal/Mouse.elm',
-  'HTTP': '/docs/Signal/HTTP.elm',
-  'Keyboard': '/docs/Signal/Keyboard.elm',
-  'KeyboardRaw': '/docs/Signal/KeyboardRaw.elm',
-  'Touch': '/docs/Signal/Touch.elm',
-  'Window': '/docs/Signal/Window.elm',
-  'Random': '/docs/Signal/Random.elm',
-  'Signal': '/docs/Signal/Signal.elm',
-  'Date': '/docs/Date.elm',
-  'Color': '/docs/Graphics/Color.elm',
-  'Text': '/docs/Graphics/Text.elm',
-  'Element': '/docs/Graphics/Element.elm',
-  'Graphics': '/docs/Graphics/Element.elm',
-  'JavaScript': '/docs/Foreign/JavaScript.elm',
-  'Automaton': '/docs/Automaton.elm',
-  'Syntax': '/learn/Syntax.elm' /* Pseudo module, used to open documentation when word is identified as 'keyword' by CodeMirror */
-};
-
 function compile(formTarget) {
   var form = document.getElementById('inputForm');
   form.target = formTarget;
@@ -73,21 +42,32 @@ function parseDoc(mods) {
   var test_desc = markdown.makeHtml('This lets you reuse code, avoid repeating\ncomputations, and improve code readability.\n\n    let c = hypotenuse 3 4 in\n      c*c\n\n    let c1 = hypotenuse 7 12\n        c2 = hypotenuse 3 4\n    in  hypotenuse c1 c2\n\nLet-expressions are also indentation sensitive, so each definition\nshould align with the one above it.\n');
   result.docs.push({name: 'let', type: 'Keyword', module: 'Syntax', desc:test_desc });
   result.modules = mods;
-  result.elmModuleToPageMap = elmModuleToPageMap;
   return result;
 }
 
 function loadDoc () {
   var req = new XMLHttpRequest();
   req.onload = function () { elmDocs = parseDoc(JSON.parse(this.responseText)); };
-  req.open('GET', '/docs', true);
+  req.open('GET', '/jsondocs', true);
   req.send();
 }
 
+function moduleToHtmlLink(module, text, hoverText) {
+  var linkText = text || module;
+  var titleText = hoverText || "";
+  return '<a href="' + moduleRef(module) + '" target="elm-docs" title="' + titleText + '">' + linkText + '</a>';
+}
+
 function moduleRef (module) {
-  var ref = elmDocs.elmModuleToPageMap[module];
+  var parts = module.split('.');
+  var ref = null;
+  if (module === 'Syntax') {
+    ref = '/learn/Syntax.elm';
+  } else {
+    ref = '/docs/' + parts.join('/') + '.elm';
+  }
   if (! ref) {
-    console.log('elmModuleToPageMap: unknown module: ' + module);
+    console.log('moduleRef: unknown module "' + module + '"');
   }
   return ref;
 }
@@ -183,7 +163,7 @@ function getDocForTokenAt (pos) {
         doc = docs.filter(function(o) { if (o.module == q.string.slice(0,-1)) return true;})[0];
       } else {
         doc = {};
-        doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return o.module; }).join(' and ');
+        doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return moduleToHtmlLink(o.module); }).join(' and ');
       }
     } else {
       doc = docs[0];
@@ -193,7 +173,7 @@ function getDocForTokenAt (pos) {
 }
 
 function typeAsText (doc) {
-  var result = doc.module ? doc.module + '.' : '';
+  var result = doc.module ? moduleToHtmlLink(doc.module) + '.' : '';
   result += doc.name + ' : ' + doc.type;
   return result;
 }
@@ -214,11 +194,12 @@ function showDoc () {
     if (!desc || desc === "") {
       desc = 'No description found';
     }
+    desc += moduleToHtmlLink(doc.module, ' [doc] ', 'click to open doc page or hit ctrl+shift+K');
   } else {
     return;
   }
 
-  var type_div = generateView(typeText, false, 'doc_type');
+  var type_div = generateView(typeText, true, 'doc_type');
   var doc_div = generateView(desc, true, 'doc');
   var docView = document.getElementById('doc_desc');
 
@@ -251,7 +232,7 @@ function updateTypeView () {
     typeText = typeAsText(doc);
   }
 
-  var type_div = generateView(typeText, false, 'doc_type');
+  var type_div = generateView(typeText, true, 'doc_type');
   var typeView = document.getElementById('doc_type');
   typeView.appendChild(type_div);
 }
