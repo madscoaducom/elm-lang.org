@@ -1,6 +1,36 @@
 var editor = null;
 var elmDocs = null;
 
+var elmModuleToPageMap = {
+  'Prelude': '/docs/Prelude.elm',
+  'Maybe': '/docs/Data/Maybe.elm',
+  'List': '/docs/Data/List.elm',
+  'Dict': '/docs/Data/Dict.elm',
+  'Either': '/docs/Data/Either.elm',
+  'Set': '/docs/Data/Set.elm',
+  'Char': '/docs/Data/Char.elm',
+  'Javascript': '/docs/Foreign/Javascript.elm',
+  'Experimental': '/docs/Foreign/Javascript/Experimental.elm',
+  'JSON': '/docs/Foreign/Javascript/JSON.elm',
+  'Input': '/docs/Signal/Input.elm',
+  'Time': '/docs/Signal/Time.elm',
+  'Mouse': '/docs/Signal/Mouse.elm',
+  'HTTP': '/docs/Signal/HTTP.elm',
+  'Keyboard': '/docs/Signal/Keyboard.elm',
+  'KeyboardRaw': '/docs/Signal/KeyboardRaw.elm',
+  'Touch': '/docs/Signal/Touch.elm',
+  'Window': '/docs/Signal/Window.elm',
+  'Random': '/docs/Signal/Random.elm',
+  'Signal': '/docs/Signal/Signal.elm',
+  'Date': '/docs/Date.elm',
+  'Graphics.Color': '/docs/Graphics/Color.elm',
+  'Graphics.Text': '/docs/Graphics/Text.elm',
+  'Graphics.Element': '/docs/Graphics/Element.elm',
+  'Graphics': '/docs/Graphics/Element.elm',
+  'JavaScript': '/docs/Foreign/JavaScript.elm',
+  'Automaton': '/docs/Automaton.elm'
+};
+
 function compile(formTarget) {
   var form = document.getElementById('inputForm');
   form.target = formTarget;
@@ -64,7 +94,9 @@ function moduleRef (module) {
   if (module === 'Syntax') {
     ref = '/learn/Syntax.elm';
   } else {
-    ref = '/docs/' + parts.join('/') + '.elm';
+    // TODO: for when new document layout is in place
+    //ref = '/docs/' + parts.join('/') + '.elm';
+    ref = elmModuleToPageMap[module];
   }
   if (! ref) {
     console.log('moduleRef: unknown module "' + module + '"');
@@ -93,7 +125,12 @@ function getQualifier (token, line) {
   if (ch > 0) {
     var t = editor.getTokenAt({line: line, ch: ch - 1});
     if (t.type == 'qualifier') {
-      return t;
+      var previous = getQualifier(t, line);
+      if (previous) {
+        return previous + '.' + t.string.slice(0, -1);
+      } else {
+        return t.string.slice(0, -1);
+      }
     }
   }
   return null;
@@ -118,7 +155,7 @@ function openDocPage () {
     if (ds.length > 1) {
       var q = getQualifier(token, current_pos.line);
       if (q) {
-        ref = moduleRef(ds.filter(function(o) { if (o.module == q.string.slice(0,-1)) return true;})[0].module);
+        ref = moduleRef(ds.filter(function(o) { if (o.module == q) return true;})[0].module);
       }
     } else {
       ref = moduleRef(ds[0].module);
@@ -160,7 +197,7 @@ function getDocForTokenAt (pos) {
     if (docs.length > 1) {
       var q = getQualifier(token, pos.line);
       if (q) {
-        doc = docs.filter(function(o) { if (o.module == q.string.slice(0,-1)) return true;})[0];
+        doc = docs.filter(function(o) { if (o.module == q) return true;})[0];
       } else {
         doc = {};
         doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return moduleToHtmlLink(o.module); }).join(' and ');
@@ -208,11 +245,15 @@ function showDoc () {
   docView.style.visibility = 'visible';
 }
 
+function hideDocView() {
+  var docView = document.getElementById('doc_desc');
+  docView.style.visibility = 'hidden';
+}
+
 function toggleDocView () {
   var docView = document.getElementById('doc_desc');
   if (docView.style.visibility == 'visible') {
-    clearView('doc_desc');
-    docView.style.visibility = 'hidden';
+    hideDocView();
   } else {
     showDoc();
   }
@@ -401,7 +442,7 @@ function initEditor() {
       extraKeys: {'Ctrl-Enter': compileOutput, 'Ctrl-K': toggleDocView, 'Shift-Ctrl-K': openDocPage }
     });
   editor.focus();
-  editor.on('cursorActivity', clearDocView);
+  editor.on('cursorActivity', hideDocView);
   initAutocompile();
   initTypeView();
   initZoom();
