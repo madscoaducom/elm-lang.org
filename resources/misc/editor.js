@@ -71,7 +71,7 @@ function parseDoc(mods) {
   result.docs = ds.reduce(function (acc, val) { return acc.concat(val); }, []);
   var test_desc = markdown.makeHtml('This lets you reuse code, avoid repeating\ncomputations, and improve code readability.\n\n    let c = hypotenuse 3 4 in\n      c*c\n\n    let c1 = hypotenuse 7 12\n        c2 = hypotenuse 3 4\n    in  hypotenuse c1 c2\n\nLet-expressions are also indentation sensitive, so each definition\nshould align with the one above it.\n');
   result.docs.push({name: 'let', type: 'Keyword', module: 'Syntax', desc:test_desc });
-  result.modules = mods;
+  result.modules = mods.modules;
   return result;
 }
 
@@ -101,6 +101,15 @@ function moduleRef (module) {
   return ref;
 }
 
+function getModuleFunctionsAsHtml(module) {
+  var m = elmDocs.modules.filter(function(x) { if (x.name == module) return true; });
+  if (m.length > 0) {
+    return m[0].values.reduce(function (acc, val) { return acc.concat(typeAsText(val) + '</br>');}, '');
+  } else {
+    return null;
+  }
+}
+
 function lookupDocs(token, line) {
   var ds = null;
   if (token.type == 'keyword' && token.string != 'let') {
@@ -111,10 +120,11 @@ function lookupDocs(token, line) {
     }];
   } else if (token.type == 'qualifier') {
     var q = getQualifier(token, line);
-    var module = token.string.slice(0, -1);
+    var module = q ? q + '.' + token.string.slice(0, -1) : token.string.slice(0, -1);
     ds = [{
-      module: q ? q + '.' + module : module,
-      type: 'Module'
+      module: module,
+      type: 'Module',
+      desc: getModuleFunctionsAsHtml(module)
     }];
   } else {
     if (token.string) {
