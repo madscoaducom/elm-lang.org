@@ -98,23 +98,27 @@ function moduleRef (module) {
     //ref = '/docs/' + parts.join('/') + '.elm';
     ref = elmModuleToPageMap[module];
   }
-  if (! ref) {
-    console.log('moduleRef: unknown module "' + module + '"');
-  }
   return ref;
 }
 
-function lookupDocs(token, type) {
+function lookupDocs(token, line) {
   var ds = null;
-  if (type == 'keyword' && token != 'let') {
+  if (token.type == 'keyword' && token.string != 'let') {
     ds = [{
-      name: token,
+      name: token.string,
       type: 'Keyword',
       module: 'Syntax'
     }];
+  } else if (token.type == 'qualifier') {
+    var q = getQualifier(token, line);
+    var module = token.string.slice(0, -1);
+    ds = [{
+      module: q ? q + '.' + module : module,
+      type: 'Module'
+    }];
   } else {
-    if (token) {
-      ds = elmDocs.docs.filter(function(x) { if (x.name == token) return true; });
+    if (token.string) {
+      ds = elmDocs.docs.filter(function(x) { if (x.name == token.string) return true; });
     }
   }
   return ds;
@@ -149,7 +153,7 @@ function getTokenAtIgnoreSpace (pos) {
 function openDocPage () {
   var current_pos = editor.getCursor(true);
   var token = getTokenAtIgnoreSpace(current_pos);
-  var ds = token.type ? lookupDocs(token.string, token.type) : null;
+  var ds = token.type ? lookupDocs(token, current_pos.line) : null;
   var ref = null;
   if (ds && ds.length > 0) {
     if (ds.length > 1) {
@@ -191,7 +195,7 @@ function generateView (content, contentIsHtml, cssClass) {
 function getDocForTokenAt (pos) {
   var doc = null;
   var token = getTokenAtIgnoreSpace(pos);
-  var docs = token.type ? lookupDocs(token.string, token.type) : null;
+  var docs = token.type ? lookupDocs(token, pos.line) : null;
 
   if (docs && docs.length > 0) {
     if (docs.length > 1) {
@@ -210,8 +214,11 @@ function getDocForTokenAt (pos) {
 }
 
 function typeAsText (doc) {
-  var result = doc.module ? moduleToHtmlLink(doc.module) + '.' : '';
-  result += doc.name + ' : ' + doc.type;
+  var result =  '';
+  result += doc.module ? moduleToHtmlLink(doc.module) : '';
+  result += (doc.module && doc.name) ? '.' : ' ';
+  result += doc.name ? doc.name : '';
+  result += doc.type ? ' : ' + doc.type : '';
   return result;
 }
 
