@@ -409,7 +409,8 @@ function initZoom() {
 }
 
 function initTypeView() {
-  var showType = readCookie('showtype') == 'true';
+  var stored = readCookie('showtype');
+  var showType = stored ? stored === 'true' : true;
   if (showType) {
     document.getElementById('show_type_checkbox').checked = showType;
     toggleShowType(showType);
