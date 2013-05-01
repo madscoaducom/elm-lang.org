@@ -1,36 +1,6 @@
 var editor = null;
 var elmDocs = null;
 
-var elmModuleToPageMap = {
-  'Prelude': '/docs/Prelude.elm',
-  'Maybe': '/docs/Data/Maybe.elm',
-  'List': '/docs/Data/List.elm',
-  'Dict': '/docs/Data/Dict.elm',
-  'Either': '/docs/Data/Either.elm',
-  'Set': '/docs/Data/Set.elm',
-  'Char': '/docs/Data/Char.elm',
-  'Javascript': '/docs/Foreign/Javascript.elm',
-  'Experimental': '/docs/Foreign/Javascript/Experimental.elm',
-  'JSON': '/docs/Foreign/Javascript/JSON.elm',
-  'Input': '/docs/Signal/Input.elm',
-  'Time': '/docs/Signal/Time.elm',
-  'Mouse': '/docs/Signal/Mouse.elm',
-  'HTTP': '/docs/Signal/HTTP.elm',
-  'Keyboard': '/docs/Signal/Keyboard.elm',
-  'KeyboardRaw': '/docs/Signal/KeyboardRaw.elm',
-  'Touch': '/docs/Signal/Touch.elm',
-  'Window': '/docs/Signal/Window.elm',
-  'Random': '/docs/Signal/Random.elm',
-  'Signal': '/docs/Signal/Signal.elm',
-  'Date': '/docs/Date.elm',
-  'Graphics.Color': '/docs/Graphics/Color.elm',
-  'Graphics.Text': '/docs/Graphics/Text.elm',
-  'Graphics.Element': '/docs/Graphics/Element.elm',
-  'Graphics': '/docs/Graphics/Element.elm',
-  'JavaScript': '/docs/Foreign/JavaScript.elm',
-  'Automaton': '/docs/Automaton.elm'
-};
-
 function compile(formTarget) {
   var form = document.getElementById('inputForm');
   form.target = formTarget;
@@ -94,9 +64,7 @@ function moduleRef (module) {
   if (module === 'Syntax') {
     ref = '/learn/Syntax.elm';
   } else {
-    // TODO: for when new document layout is in place
-    //ref = '/docs/' + parts.join('/') + '.elm';
-    ref = elmModuleToPageMap[module];
+    ref = '/docs/' + parts.join('/') + '.elm';
   }
   return ref;
 }
