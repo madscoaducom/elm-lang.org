@@ -10,17 +10,24 @@ import Text.JSON
 import qualified Language.Elm as Elm
 import RenameTypes as Rename
 import System.FilePath
+import System.Directory
 
 main = do
   libs <- fmap parse (readFile =<< Elm.docs)
   structure <- readFile "structure.json"
   mapM writeDocs (parseStructure libs structure)
 
-writeDocs (name, code) = putStrLn code >> writeFile fileName code
+writeDocs (name, code) = do putStrLn name
+                            createDirectoryIfMissing True dir
+                            writeFile fileName code
   where
-    fileName = ".." </> "public" </> "docs" </> joinPath (split name) <.> "elm"
+    fileName =  dir </> last fileParts <.> "elm"
+
+    dir = ".." </> "public" </> "docs" </> joinPath (init fileParts)
+    fileParts = split name
+
     split [] = []
-    split xs = hd : split tl
+    split xs = hd : split (dropWhile (=='.') tl)
         where (hd,tl) = span (/='.') xs
 
 parseStructure libs s =
@@ -41,7 +48,10 @@ toElm libraries structure = (name, code)
               rest = if null leftovers then [] else
                          [("Other Useful Functions", leftovers)]
 
-    facts = libraries ! name
+    find err = let msg = "Lookup Error: " ++ err ++ "was not found"
+               in  Map.findWithDefault (error msg)
+
+    facts = find ("module " ++ name) name libraries
     listify indent xs = spc ++ "[ " ++ intercalate (spc ++ ", ") xs ++ spc ++ "]"
         where spc = '\n' : replicate indent ' '
     toSection (name,values) = 
@@ -49,7 +59,7 @@ toElm libraries structure = (name, code)
     isOp c = isSymbol c || elem c "+-/*=.$<>:&|^?%#@~!"
     toEntry value =
         "(\"" ++ value' ++ "\", \"" ++ tipe' ++ "\", [markdown|" ++ desc ++ "|])"
-        where (tipe, desc) = facts ! value
+        where (tipe, desc) = find (name ++ "." ++ value) value facts
               tipe' = Rename.rename tipe
               value' = if all isOp value then "(" ++ value ++ ")" else value
 
