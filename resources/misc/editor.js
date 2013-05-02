@@ -52,10 +52,11 @@ function loadDoc () {
   req.send();
 }
 
-function moduleToHtmlLink(module, text, hoverText) {
+function moduleToHtmlLink(module, anchor, text, hoverText) {
   var linkText = text || module;
-  var titleText = hoverText || "";
-  return '<a href="' + moduleRef(module) + '" target="elm-docs" title="' + titleText + '">' + linkText + '</a>';
+  var titleText = hoverText || '';
+  var anchorLink = anchor ? '#' + anchor : '';
+  return '<a href="' + moduleRef(module) + anchorLink + '" target="elm-docs" title="' + titleText + '">' + linkText + '</a>';
 }
 
 function moduleRef (module) {
@@ -137,10 +138,10 @@ function openDocPage () {
     if (ds.length > 1) {
       var q = getQualifier(token, current_pos.line);
       if (q) {
-        ref = moduleRef(ds.filter(function(o) { if (o.module == q) return true;})[0].module);
+        ref = moduleRef(ds.filter(function(o) { if (o.module == q) return true;})[0].module + '#' + ds[0].name);
       }
     } else {
-      ref = moduleRef(ds[0].module);
+      ref = moduleRef(ds[0].module) + '#' + ds[0].name;
     }
   }
   if (ref) {
@@ -193,9 +194,10 @@ function getDocForTokenAt (pos) {
 
 function typeAsText (doc) {
   var result =  '';
-  result += doc.module ? moduleToHtmlLink(doc.module) : '';
+  result += doc.module ? doc.module : '';
   result += (doc.module && doc.name) ? '.' : ' ';
   result += doc.name ? doc.name : '';
+  result = moduleToHtmlLink(doc.module, doc.name, result);
   result += doc.type ? ' : ' + doc.type : '';
   return result;
 }
@@ -216,7 +218,6 @@ function showDoc () {
     if (!desc || desc === "") {
       desc = 'No description found';
     }
-    desc += moduleToHtmlLink(doc.module, ' [doc] ', 'click to open doc page or hit ctrl+shift+K');
   } else {
     return;
   }
