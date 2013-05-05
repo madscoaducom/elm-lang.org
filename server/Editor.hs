@@ -73,9 +73,9 @@ editor filePath code =
                H.input ! A.class_ "valign" ! A.id "autocompile_checkbox" ! A.type_ "checkbox" !
                   A.onchange "toggleAutoCompile(this.checked)"
              H.div ! A.style "float:left; padding:6px;" $ do
-               H.input ! A.class_ "valign" !
+               H.input ! A.class_ "valign" ! A.title "Ctrl+K: open doc in editor\nCtrl+Shift+K: open window/tab with doc" !
                   A.id "help_button" ! A.type_ "button" ! A.style "margin: 0 10px 0 0;" !
-                  A.onclick "showHelpView()" ! A.value "?"
+                  A.onclick "toggleDocView();" ! A.value "?"
                H.span ! A.title "Show the basic examples" $ do
                   H.span ! A.class_ "valign" $ "Examples:"
                   H.input ! A.class_ "valign" ! A.id "examples_checkbox" ! A.type_ "checkbox" !
