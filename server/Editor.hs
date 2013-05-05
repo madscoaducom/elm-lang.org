@@ -56,7 +56,6 @@ editor filePath code =
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
            H.div ! A.id "editor_box" ! A.style "position:absolute;top:0;left:0;right:0;bottom:36px;" $ do
              H.textarea ! A.name "input" ! A.id "input" $ toHtml ('\n':code)
-           H.div ! A.id "help_text" $ ""
            H.div ! A.id "doc_desc" $ ""
            H.div ! A.id "doc_type" $ ""
            H.div ! A.class_ "opts" ! A.id "options" $ do
