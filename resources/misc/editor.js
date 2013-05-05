@@ -39,8 +39,6 @@ function parseDoc(mods) {
 
   var result = {};
   result.docs = ds.reduce(function (acc, val) { return acc.concat(val); }, []);
-  var test_desc = markdown.makeHtml('This lets you reuse code, avoid repeating\ncomputations, and improve code readability.\n\n    let c = hypotenuse 3 4 in\n      c*c\n\n    let c1 = hypotenuse 7 12\n        c2 = hypotenuse 3 4\n    in  hypotenuse c1 c2\n\nLet-expressions are also indentation sensitive, so each definition\nshould align with the one above it.\n');
-  result.docs.push({name: 'let', type: 'Keyword', module: 'Syntax', desc:test_desc });
   result.modules = mods.modules;
   return result;
 }
@@ -70,18 +68,9 @@ function moduleRef (module) {
   return ref;
 }
 
-function getModuleFunctionsAsHtml(module) {
-  var m = elmDocs.modules.filter(function(x) { if (x.name == module) return true; });
-  if (m.length > 0) {
-    return m[0].values.reduce(function (acc, val) { return acc.concat(typeAsText(val) + '</br>');}, '');
-  } else {
-    return null;
-  }
-}
-
 function lookupDocs(token, line) {
   var ds = null;
-  if (token.type == 'keyword' && token.string != 'let') {
+  if (token.type == 'keyword') {
     ds = [{
       name: token.string,
       type: 'Keyword',
@@ -92,8 +81,7 @@ function lookupDocs(token, line) {
     var module = q ? q + '.' + token.string.slice(0, -1) : token.string.slice(0, -1);
     ds = [{
       module: module,
-      type: 'Module',
-      desc: getModuleFunctionsAsHtml(module)
+      type: 'Module'
     }];
   } else {
     if (token.string) {
@@ -119,19 +107,9 @@ function getQualifier (token, line) {
   return null;
 }
 
-function getTokenAtIgnoreSpace (pos) {
-  var ch = pos.ch;
-  var token = editor.getTokenAt({line: pos.line, ch: ch});
-  while (!token.type && ch  > 0) {
-    ch = ch - 1;
-    token = editor.getTokenAt({line: pos.line, ch: ch});
-  }
-  return token;
-}
-
 function openDocPage () {
   var current_pos = editor.getCursor(true);
-  var token = getTokenAtIgnoreSpace(current_pos);
+  var token = editor.getTokenAt(current_pos);
   var ds = token.type ? lookupDocs(token, current_pos.line) : null;
   var ref = null;
   if (ds && ds.length > 0) {
@@ -173,7 +151,7 @@ function generateView (content, contentIsHtml, cssClass) {
 
 function getDocForTokenAt (pos) {
   var doc = null;
-  var token = getTokenAtIgnoreSpace(pos);
+  var token = editor.getTokenAt(pos);
   var docs = token.type ? lookupDocs(token, pos.line) : null;
 
   if (docs && docs.length > 0) {
@@ -183,7 +161,7 @@ function getDocForTokenAt (pos) {
         doc = docs.filter(function(o) { if (o.module == q) return true;})[0];
       } else {
         doc = {};
-        doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return moduleToHtmlLink(o.module); }).join(' and ');
+        doc.error = 'Ambiguous: ' + token.string + ' defined in ' + docs.map(function(o) { return moduleToHtmlLink(o.module, token.string); }).join(' and ');
       }
     } else {
       doc = docs[0];
@@ -195,7 +173,7 @@ function getDocForTokenAt (pos) {
 function typeAsText (doc) {
   var result =  '';
   result += doc.module ? doc.module : '';
-  result += (doc.module && doc.name) ? '.' : ' ';
+  result += (doc.module && doc.name) ? '.' : '';
   result += doc.name ? doc.name : '';
   result = moduleToHtmlLink(doc.module, doc.name, result);
   result += doc.type ? ' : ' + doc.type : '';
@@ -215,11 +193,12 @@ function showDoc () {
   } else if (doc) {
     typeText = typeAsText(doc);
     desc = doc.desc;
-    if (!desc || desc === "") {
-      desc = 'No description found';
-    }
   } else {
     return;
+  }
+
+  if (!desc || desc === "") {
+    desc = 'No description found';
   }
 
   var type_div = generateView(typeText, true, 'doc_type');
