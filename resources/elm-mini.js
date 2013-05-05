@@ -2285,6 +2285,17 @@ Elm.WebSocket = function(elm){
  _.$op = {}
  return elm.WebSocket = _;
  };
+Elm.Vector2D = function(elm){
+ var N = Elm.Native, _N = N.Utils(elm), _L = N.List(elm), _E = N.Error(elm), _str = N.JavaScript(elm).toString;
+ var $op = {};
+ var V = Elm.Native.Vector2D(elm);
+ var _ = Elm.Matrix2D(elm); var Matrix2D = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
+ var e, case0;
+ elm.Native = elm.Native||{};
+ var _ = elm.Native.Vector2D||{};
+ _.$op = {}
+ return elm.Vector2D = _;
+ };
 Elm.Touch = function(elm){
  var N = Elm.Native, _N = N.Utils(elm), _L = N.List(elm), _E = N.Error(elm), _str = N.JavaScript(elm).toString;
  var $op = {};
@@ -2540,8 +2551,8 @@ Elm.Keyboard = function(elm){
  var $op = {};
  var N = Elm.Native.Keyboard(elm);
  var e, case0, arrows_0, wasd_1, shift_2, ctrl_3, space_4, enter_5;
- arrows_0 = A4(N.directions, 37, 39, 38, 40);
- wasd_1 = A4(N.directions, 65, 68, 87, 83);
+ arrows_0 = A4(N.directions, 38, 40, 37, 39);
+ wasd_1 = A4(N.directions, 87, 83, 65, 68);
  shift_2 = N.isDown(16);
  ctrl_3 = N.isDown(17);
  space_4 = N.isDown(32);
@@ -2817,7 +2828,7 @@ Elm.Dict = function(elm){
  fromList_40 = function(assocs_226){
   return A3(List.foldl, function(_0_227){
    return (e=_0_227.ctor==='Tuple2'?function(d_230){
-    return A3(insert_18, _0_227._0, _0_227._1, d_230);}:null,e!==null?e:_E.Case('Line 403, Column 43'));}, empty_4, assocs_226);};
+    return A3(insert_18, _0_227._0, _0_227._1, d_230);}:null,e!==null?e:_E.Case('Line 402, Column 43'));}, empty_4, assocs_226);};
  empty_4 = RBEmpty_3;
  elm.Native = elm.Native||{};
  var _ = elm.Native.Dict||{};
@@ -3051,13 +3062,13 @@ Elm.Graphics.Input = function(elm){
   return (pool_14 = N.customButtons({ctor:"Tuple0"}), {ctor:"Tuple2", _0:A4(pool_14.button, {ctor:"Tuple0"}, up_11, hover_12, down_13), _1:pool_14.events});});
  checkBox_3 = function(b_15){
   return (cbs_16 = N.checkBoxes(b_15), {ctor:"Tuple2", _0:A2(lift, cbs_16.box(id_0), cbs_16.events), _1:cbs_16.events});};
- TextState_4 = F3(function(input_17, start_18, end_19){
+ TextState_4 = F3(function(text_17, start_18, end_19){
   return {
     _:{
     },
     end:end_19,
-    input:input_17,
-    start:start_18};});
+    start:start_18,
+    text:text_17};});
  text_5 = F2(function(placeHolder_20, textState_21){
   return (tfs_22 = N.textFields(textState_21), {ctor:"Tuple2", _0:A2(lift, A2(tfs_22.field, id_0, placeHolder_20), tfs_22.events), _1:tfs_22.events});});
  password_6 = F2(function(placeHolder_23, textState_24){
@@ -4382,7 +4393,7 @@ Elm.Website.Skeleton = function(elm){
  button_1 = function(_16000_9){
   return (e=_16000_9.ctor==='Tuple3'?(btn_13 = function(alpha_14){
    return A2(flow, down, _L.Cons(function(x){
-    return A2(color, A4(rgba, 200, 200, 200, alpha_14), A4(container, 100, 58, middle, A2(width, 100, centered(x))));}(toText(_16000_9._0)),_L.Cons(A2(color, _16000_9._2, A2(spacer, 100, 2)),_L.Nil)));}, A4(navigation_0.button, _16000_9._1, btn_13(0), btn_13(0.1), btn_13(0.2))):null,e!==null?e:_E.Case('Line 12, Column 2'));};
+    return A2(color, A4(rgba, 200, 200, 200, alpha_14), A4(container, 100, 58, middle, A2(width, 100, centered(A2(Text.color, black, x)))));}(toText(_16000_9._0)),_L.Cons(A2(color, _16000_9._2, A2(spacer, 100, 2)),_L.Nil)));}, A2(link, _16000_9._1, A4(navigation_0.button, _16000_9._1, btn_13(0), btn_13(0.1), btn_13(0.2)))):null,e!==null?e:_E.Case('Line 12, Column 2'));};
  title_3 = function(w_15){
   return (ttl_16 = function(x){
    return A2(Text.link, _str('/'), A2(Text.color, black, A2(Text.height, 2, bold(x))));}(toText(_str('Elm'))), A4(container, w_15, 60, midLeft, text(ttl_16)));};
