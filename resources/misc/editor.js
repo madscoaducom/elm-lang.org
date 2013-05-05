@@ -16,9 +16,15 @@ function setEditorBottom() {
   editor.refresh();
 }
 
+
 function initHelpView() {
-  var text = "Helpfull text";
-  var help_div = generateView(text, false, 'doc');
+  var help_text = "###Shortcut keys \n" +
+  "- `Ctrl+Enter`: Compile code. Tick 'Autocompile' to compile on changes. \n" +
+  "- `Ctrl+K`: Show documentation for token under (left-of) cursor. \n" +
+  "- `Ctrl+Shift+K`: Open documentation page in new Tab/Window. \n" +
+  "\n\n<input type='button' value='Close' onclick='hideHelpView();'/>";
+  var markdown = new Showdown.converter();
+  var help_div = generateView(markdown.makeHtml(help_text), true, 'doc');
   var helpView = document.getElementById('help_text');
   helpView.appendChild(help_div);
 }
