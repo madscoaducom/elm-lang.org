@@ -84,6 +84,19 @@ form { margin-bottom: 0; }
   background: #fefefe;
 }
 
+#help_text {
+  font-family: calibri,helvetica,arial,sans-serif;
+  top: 0;
+  right: 0;
+  left: 0;
+  margin: 10px 25px 10px 25px;
+  position: absolute;
+  border: 1px solid rgb(150,150,150);
+  z-index: 5;
+  visibility: hidden;
+  background: #fefefe;
+}
+
 .doc {
   margin: 0.5em;
 }

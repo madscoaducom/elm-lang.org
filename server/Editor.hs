@@ -56,6 +56,7 @@ editor filePath code =
         H.form ! A.id "inputForm" ! A.action "/compile" ! A.method "post" ! A.target "output" $ do
            H.div ! A.id "editor_box" ! A.style "position:absolute;top:0;left:0;right:0;bottom:36px;" $ do
              H.textarea ! A.name "input" ! A.id "input" $ toHtml ('\n':code)
+           H.div ! A.id "help_text" $ ""
            H.div ! A.id "doc_desc" $ ""
            H.div ! A.id "doc_type" $ ""
            H.div ! A.class_ "opts" ! A.id "options" $ do
@@ -71,7 +72,10 @@ editor filePath code =
                H.span  ! A.class_ "valign" $ " Auto-compile:"
                H.input ! A.class_ "valign" ! A.id "autocompile_checkbox" ! A.type_ "checkbox" !
                   A.onchange "toggleAutoCompile(this.checked)"
-             H.div ! A.style "float:left; padding:10px;" $ do
+             H.div ! A.style "float:left; padding:6px;" $ do
+               H.input ! A.class_ "valign" !
+                  A.id "help_button" ! A.type_ "button" ! A.style "margin: 0 10px 0 0;" !
+                  A.onclick "showHelpView()" ! A.value "?"
                H.span ! A.title "Show the basic examples" $ do
                   H.span ! A.class_ "valign" $ "Examples:"
                   H.input ! A.class_ "valign" ! A.id "examples_checkbox" ! A.type_ "checkbox" !

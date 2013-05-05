@@ -12,8 +12,25 @@ function setEditorBottom() {
   var opts = document.getElementById('editor_options');
   var edb = document.getElementById('editor_box');
   visible = typeView.style.visibility === 'visible' || opts.style.visibility === 'visible';
-  edb.style.bottom = visible ? '60px' : '36px';
+  edb.style.bottom = visible ? '62px' : '36px';
   editor.refresh();
+}
+
+function initHelpView() {
+  var text = "Helpfull text";
+  var help_div = generateView(text, false, 'doc');
+  var helpView = document.getElementById('help_text');
+  helpView.appendChild(help_div);
+}
+
+function showHelpView() {
+  var helpView = document.getElementById('help_text');
+  helpView.style.visibility = 'visible';
+}
+
+function hideHelpView() {
+  var helpView = document.getElementById('help_text');
+  helpView.style.visibility = 'hidden';
 }
 
 function showTypeView() {
@@ -435,6 +452,7 @@ function initEditor() {
   initZoom();
   initOptions();
   initExamples();
+  initHelpView();
 }
 
 /* jshint browser: true */
