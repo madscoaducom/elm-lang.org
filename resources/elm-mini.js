@@ -299,13 +299,14 @@ Elm.Native.Show = function(elm) {
 
     var toString = function(v) {
         if (typeof v === "function") {
-            return "<function>";
+            var name = v.func ? v.func.name : v.name;
+            return '<function' + (name === '' ? '' : ': ') + name + '>';
         } else if (typeof v === "boolean") {
             return v ? "True" : "False";
         } else if (typeof v === "number") {
             return v+"";
         } else if (typeof v === "string" && v.length < 2) {
-            return "'"+v+"'";
+            return "'" + showChar(v) + "'";
         } else if (typeof v === "object" && '_' in v) {
             var output = [];
             for (var k in v._) {
@@ -333,9 +334,7 @@ Elm.Native.Show = function(elm) {
                 start = isStr ? '"' : "[",
                 end   = isStr ? '"' : "]",
                 sep   = isStr ?  "" : ",",
-                f     = !isStr ? toString : function(x){
-                    return x === '\n' ? '\\n' : x;
-                };
+                f     = !isStr ? toString : showChar;
                 var output = start + f(v._0);
                 v = v._1;
                 while (v.ctor === "Cons") {
@@ -369,6 +368,18 @@ Elm.Native.Show = function(elm) {
     };
     function show(v) { return NList.fromArray(toString(v)); }
 
+    function showChar (c) {
+        return c === '\n' ? '\\n' :
+               c === '\t' ? '\\t' :
+               c === '\b' ? '\\b' :
+               c === '\r' ? '\\r' :
+               c === '\v' ? '\\v' :
+               c === '\0' ? '\\0' :
+               c === '\'' ? "\\'" :
+               c === '\"' ? '\\"' :
+               c === '\\' ? '\\\\' : c;
+    }
+
     return elm.Native.Show = { show:show };
 };
 Elm.Native.Prelude = function(elm) {
@@ -399,8 +410,8 @@ Elm.Native.Prelude = function(elm) {
 
   function id(n) { return n }
   function flip(f,a,b) { return A2(f,b,a) }
-  function curry(f,v) { return A2(f,v._0,v._1) }
-  function uncurry(f,a,b) { return f(Utils.Tuple2(a,b)) }
+  function curry(f,a,b) { return f(Utils.Tuple2(a,b)) }
+  function uncurry(f,v) { return A2(f,v._0,v._1) }
   function fst(t) { return t._0 }
   function snd(t) { return t._1 }
 
@@ -478,8 +489,8 @@ Elm.Native.Prelude = function(elm) {
 
       id:id,
       flip:F3(flip),
-      curry:F2(curry),
-      uncurry:F3(uncurry),
+      curry:F3(curry),
+      uncurry:F2(uncurry),
       fst:fst,
       snd:snd
   };
@@ -1310,8 +1321,12 @@ Elm.Native.Window = function(elm) {
   var Signal = Elm.Signal(elm);
   var Tuple2 = Elm.Native.Utils(elm).Tuple2;
 
-  var dimensions = Signal.constant(Tuple2(elm.node.clientWidth,
-					  elm.node.clientHeight));
+  function getWidth() { return elm.node.clientWidth; }
+  function getHeight() {
+      return document.body === elm.node ? window.innerHeight : elm.node.clientHeight;
+  }
+
+  var dimensions = Signal.constant(Tuple2(getWidth(), getHeight()));
   dimensions.defaultNumberOfKids = 2;
 
   // Do not move width and height into Elm. By setting the default number of kids,
@@ -1323,9 +1338,8 @@ Elm.Native.Window = function(elm) {
   height.defaultNumberOfKids = 0;
 
   function resize(e) {
-      var w = elm.node.clientWidth;
-      var h = document.body === elm.node ? window.innerHeight : elm.node.clientHeight;
-      console.log('cmp', dimensions.value._0, w, dimensions.value._1, h);
+      var w = getWidth();
+      var h = getHeight();
       if (dimensions.value._0 === w && dimensions.value._1 === h) return;
       var hasListener = elm.notify(dimensions.id, Tuple2(w,h));
       if (!hasListener) window.removeEventListener('resize', resize);
@@ -1407,6 +1421,10 @@ Elm.Native.Touch = function(elm) {
       this.values.splice(i,1);
       return t;
     };
+    this.clear = function() {
+        this.keys = [];
+        this.values = [];
+    };
   }
   
   var root = Signal.constant([]),
@@ -1427,6 +1445,8 @@ Elm.Native.Touch = function(elm) {
 	      };
   }
 
+  var node = elm.node === document.body ? document : elm.node;
+
   function start(e) {
     dict.insert(e.identifier,{x:e.pageX,y:e.pageY,t:Date.now()});
   }
@@ -1444,10 +1464,10 @@ Elm.Native.Touch = function(elm) {
       var ts = new Array(e.touches.length);
       for (var i = e.touches.length; i--; ) { ts[i] = touch(e.touches[i]); }
       var hasListener = elm.notify(root.id, ts);
-      if (!hasListener) return elm.node.removeEventListener(name, update);
+      if (!hasListener) return node.removeEventListener(name, update);
       e.preventDefault();
     }
-    elm.node.addEventListener(name, update);
+    node.addEventListener(name, update);
   }
 
   listen("touchstart", start);
@@ -1456,6 +1476,46 @@ Elm.Native.Touch = function(elm) {
   listen("touchcancel", end);
   listen("touchleave", end);
 
+  var mouseID = -1;
+  function move(e) {
+      for (var i = root.value.length; i--; ) {
+          if (root.value[i].id === mouseID) {
+              root.value[i].x = e.pageX;
+              root.value[i].y = e.pageY;
+              elm.notify(root.id, root.value);
+              break;
+          }
+      }
+  }
+  node.addEventListener("mousedown", function(e) {
+          node.addEventListener("mousemove", move);
+          e.identifier = mouseID;
+          root.value.push(touch(e));
+          start(e);
+          elm.notify(root.id, root.value);
+      });
+  node.addEventListener("mouseup", function(e) {
+          node.removeEventListener("mousemove", move);
+          e.identifier = mouseID;
+          end(e);
+          for (var i = root.value.length; i--; ) {
+              if (root.value[i].id === mouseID) {
+                  root.value.splice(i, 1);
+                  --mouseID;
+                  break;
+              }
+          }
+          elm.notify(root.id, root.value);
+      });
+  node.addEventListener("blur", function() {
+          node.removeEventListener("mousemove", move);
+          if (root.values.length > 0) {
+              elm.notify(root.id, []);
+              --mouseID;
+          }
+          dict.clear();
+      });
+
   function dependency(f) {
       var sig = A2( Signal.lift, f, root );
       root.defaultNumberOfKids += 1;
@@ -1463,7 +1523,7 @@ Elm.Native.Touch = function(elm) {
       return sig;
   }
 
-  var touches = dependency(JS.fromList);
+  var touches = dependency(JS.toList);
 
   var taps = function() {
       var sig = dependency(function(_) { return tap; });
@@ -1637,7 +1697,11 @@ Elm.Native.Signal = function(elm) {
   }
 
   function foldp(func,state,input) {
-    function update() { state = A2(func, input.value, state); return state }
+    var first = true;
+    function update() {
+        first ? first = false : state = A2(func, input.value, state);
+        return state;
+    }
     return new LiftN(update, [input]);
   }
 
@@ -1808,7 +1872,7 @@ Elm.Native.Random = function(elm) {
     return A2( Signal.lift, f, signal );
   }
 
-  return elm.Native.Random = { range: F3(randomize), float: float };
+  return elm.Native.Random = { range: F3(range), float: float };
 
 };
 Elm.Native.Mouse = function(elm) {
@@ -1850,33 +1914,35 @@ Elm.Native.Mouse = function(elm) {
     return Utils.Tuple2(posx, posy);
   }
 
+  var node = elm.node.tagName === "BODY" ? document : elm.node;
+
   function click(e) {
     var hasListener1 = elm.notify(isClicked.id, true);
     var hasListener2 = elm.notify(clicks.id, Utils.Tuple0);
     elm.notify(isClicked.id, false);
     if (!hasListener1 && !hasListener2)
-	elm.node.removeEventListener('click', click);
+	node.removeEventListener('click', click);
   }
 
   function down(e) {
     var hasListener = elm.notify(isDown.id, true);
-    if (!hasListener) elm.node.removeEventListener('mousedown', down);
+    if (!hasListener) node.removeEventListener('mousedown', down);
   }
 
   function up(e) {
     var hasListener = elm.notify(isDown.id, false);
-    if (!hasListener) elm.node.removeEventListener('mouseup', up);
+    if (!hasListener) node.removeEventListener('mouseup', up);
   }
 
   function move(e) {
     var hasListener = elm.notify(position.id, getXY(e));
-    if (!hasListener) elm.node.removeEventListener('mousemove', move);
+    if (!hasListener) node.removeEventListener('mousemove', move);
   }
 
-  elm.node.addEventListener('click'    , click);
-  elm.node.addEventListener('mousedown', down);
-  elm.node.addEventListener('mouseup'  , up);
-  elm.node.addEventListener('mousemove', move);
+  node.addEventListener('click'    , click);
+  node.addEventListener('mousedown', down);
+  node.addEventListener('mouseup'  , up);
+  node.addEventListener('mousemove', move);
 
   return elm.Native.Mouse = {
       position: position,
@@ -1896,7 +1962,7 @@ Elm.Native.Keyboard = function(elm) {
   var NList = Elm.Native.List(elm);
 
   var keysDown = Signal.constant(NList.Nil);
-  var charPressed = Signal.constant('\0');
+  var lastKey = Signal.constant('\0');
 
   function down(e) {
       if (NList.member(e.keyCode)(keysDown.value)) return;
@@ -1915,7 +1981,7 @@ Elm.Native.Keyboard = function(elm) {
       if (!hasListener) elm.node.removeEventListener('blur', blur);
   }
   function press(e) {
-      var hasListener = elm.notify(charPressed.id, e.charCode || e.keyCode);
+      var hasListener = elm.notify(lastKey.id, e.charCode || e.keyCode);
       if (!hasListener) elm.node.removeEventListener('keypress', press);
   }
 
@@ -1954,7 +2020,7 @@ Elm.Native.Keyboard = function(elm) {
       isDown:is,
       directions:F4(dir),
       keysDown:keysDown,
-      lastPressed:charPressed
+      lastKey:lastKey
   };
 
 };
@@ -2133,7 +2199,7 @@ Elm.Native.Graphics.Input = function(elm) {
  }
 
 
- function checkBoxes(defaultValue) {
+ function checkboxes(defaultValue) {
      var events = Signal.constant(defaultValue);
 
      function render(model) {
@@ -2166,7 +2232,7 @@ Elm.Native.Graphics.Input = function(elm) {
      return { _:{}, box:F2(box), events:events };
  }
 
- function mkTextPool(type) { return function textFields(defaultValue) {
+ function mkTextPool(type) { return function fields(defaultValue) {
      var events = Signal.constant(defaultValue);
 
      function render(model) {
@@ -2176,7 +2242,7 @@ Elm.Native.Graphics.Input = function(elm) {
 	 field.id = 'test';
 	 field.type = type;
 	 field.placeholder = fromString(model.placeHolder);
-	 field.value = fromString(model.state.input);
+	 field.value = fromString(model.state.string);
 	 field.setSelectionRange(model.state.start, model.state.end);
 	 field.style.border = 'none';
 
@@ -2188,7 +2254,7 @@ Elm.Native.Graphics.Input = function(elm) {
 		 end = field.selectionStart;
 	     }
 	     var state = { _:{},
-			   input:toString(field.value),
+			   string:toString(field.value),
 			   start:start,
 			   end:end };
 	     elm.notify(events.id, field.elmHandler(state));
@@ -2209,7 +2275,7 @@ Elm.Native.Graphics.Input = function(elm) {
 
      function update(node, oldModel, newModel) {
 	 node.elmHandler = newModel.handler;
-	 node.value = fromString(newModel.state.input);
+	 node.value = fromString(newModel.state.string);
 	 if (newModel.state.start <= newModel.state.end) {
 	     node.setSelectionRange(newModel.state.start, newModel.state.end);
 	 } else {
@@ -2237,7 +2303,8 @@ Elm.Native.Graphics.Input = function(elm) {
  return elm.Native.Graphics.Input = {
      buttons:buttons,
      customButtons:customButtons,
-     textFields:mkTextPool('text'),
+     checkboxes:checkboxes,
+     fields:mkTextPool('text'),
      emails:mkTextPool('email'),
      passwords:mkTextPool('password')
  };
@@ -2300,21 +2367,10 @@ Elm.Touch = function(elm){
  var N = Elm.Native, _N = N.Utils(elm), _L = N.List(elm), _E = N.Error(elm), _str = N.JavaScript(elm).toString;
  var $op = {};
  var T = Elm.Native.Touch(elm);
- var e, case0, Touch_0;
- Touch_0 = F6(function(x_1, y_2, id_3, x0_4, y0_5, t0_6){
-  return {
-    _:{
-    },
-    id:id_3,
-    t0:t0_6,
-    x:x_1,
-    x0:x0_4,
-    y:y_2,
-    y0:y0_5};});
+ var e, case0;
  elm.Native = elm.Native||{};
  var _ = elm.Native.Touch||{};
- _.$op = {};
- _.Touch = Touch_0
+ _.$op = {}
  return elm.Touch = _;
  };
 Elm.Time = function(elm){
@@ -2382,27 +2438,26 @@ Elm.Set = function(elm){
   return A2(Dict.singleton, k_13, {ctor:"Tuple0"});};
  insert_2 = function(k_14){
   return A2(Dict.insert, k_14, {ctor:"Tuple0"});};
- diff_7 = F2(function(s1_15, s2_16){
-  return A3(foldl_10, remove_3, s1_15, s2_16);});
- fromList_9 = function(xs_17){
-  return A3(List.foldl, insert_2, empty_0, xs_17);};
- foldl_10 = F3(function(f_18, b_19, s_20){
-  return A3(Dict.foldl, function(k_21){
-   return function(__22){
-    return function(b_23){
-     return A2(f_18, k_21, b_23);};};}, b_19, s_20);});
- foldr_11 = F3(function(f_24, b_25, s_26){
-  return A3(Dict.foldr, function(k_27){
-   return function(__28){
-    return function(b_29){
-     return A2(f_24, k_27, b_29);};};}, b_25, s_26);});
- map_12 = F2(function(f_30, s_31){
-  return fromList_9(A2(List.map, f_30, toList_8(s_31)));});
+ fromList_9 = function(xs_15){
+  return A3(List.foldl, insert_2, empty_0, xs_15);};
+ foldl_10 = F3(function(f_16, b_17, s_18){
+  return A3(Dict.foldl, function(k_19){
+   return function(__20){
+    return function(b_21){
+     return A2(f_16, k_19, b_21);};};}, b_17, s_18);});
+ foldr_11 = F3(function(f_22, b_23, s_24){
+  return A3(Dict.foldr, function(k_25){
+   return function(__26){
+    return function(b_27){
+     return A2(f_22, k_25, b_27);};};}, b_23, s_24);});
+ map_12 = F2(function(f_28, s_29){
+  return fromList_9(A2(List.map, f_28, toList_8(s_29)));});
  empty_0 = Dict.empty;
  remove_3 = Dict.remove;
  member_4 = Dict.member;
  union_5 = Dict.union;
  intersect_6 = Dict.intersect;
+ diff_7 = Dict.diff;
  toList_8 = Dict.keys;
  elm.Native = elm.Native||{};
  var _ = elm.Native.Set||{};
@@ -2690,23 +2745,29 @@ Elm.Either = function(elm){
  var N = Elm.Native, _N = N.Utils(elm), _L = N.List(elm), _E = N.Error(elm), _str = N.JavaScript(elm).toString;
  var $op = {};
  var _ = Elm.List(elm); var List = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
- var e, case0, either_2, isLeft_3, isRight_4, lefts_5, rights_6, partition_7;
+ var e, case0, either_2, isLeft_3, isRight_4, lefts_5, rights_6, partition_7, consLeft_8, consRight_9, consEither_10;
  Left_0 = function(a1){
   return {ctor:"Left", _0:a1};};
  Right_1 = function(a1){
   return {ctor:"Right", _0:a1};};
- either_2 = F3(function(f_8, g_9, e_10){
-  return (e=e_10.ctor==='Left'?f_8(e_10._0):e_10.ctor==='Right'?g_9(e_10._0):null,e!==null?e:_E.Case('Line 15, Column 16'));});
- isLeft_3 = function(e_13){
-  return (e=e_13.ctor==='Left'?true:null,e!==null?e:false);};
- isRight_4 = function(e_14){
-  return (e=e_14.ctor==='Right'?true:null,e!==null?e:false);};
- lefts_5 = function(es_15){
-  return A2(List.filter, isLeft_3, es_15);};
- rights_6 = function(es_16){
-  return A2(List.filter, isRight_4, es_16);};
- partition_7 = function(es_17){
-  return A2(List.partition, isLeft_3, es_17);};
+ either_2 = F3(function(f_11, g_12, e_13){
+  return (e=e_13.ctor==='Left'?f_11(e_13._0):e_13.ctor==='Right'?g_12(e_13._0):null,e!==null?e:_E.Case('Line 15, Column 16'));});
+ isLeft_3 = function(e_16){
+  return (e=e_16.ctor==='Left'?true:null,e!==null?e:false);};
+ isRight_4 = function(e_17){
+  return (e=e_17.ctor==='Right'?true:null,e!==null?e:false);};
+ lefts_5 = function(es_18){
+  return A3(List.foldr, consLeft_8, _L.Nil, es_18);};
+ rights_6 = function(es_19){
+  return A3(List.foldr, consRight_9, _L.Nil, es_19);};
+ partition_7 = function(es_20){
+  return A3(List.foldr, consEither_10, {ctor:"Tuple2", _0:_L.Nil, _1:_L.Nil}, es_20);};
+ consLeft_8 = F2(function(e_21, vs_22){
+  return (e=e_21.ctor==='Left'?_L.Cons(e_21._0,vs_22):e_21.ctor==='Right'?vs_22:null,e!==null?e:_E.Case('Line 39, Column 5'));});
+ consRight_9 = F2(function(e_24, vs_25){
+  return (e=e_24.ctor==='Left'?vs_25:e_24.ctor==='Right'?_L.Cons(e_24._0,vs_25):null,e!==null?e:_E.Case('Line 44, Column 5'));});
+ consEither_10 = F2(function(e_27, _51000_28){
+  return (e=_51000_28.ctor==='Tuple2'?(e=e_27.ctor==='Left'?{ctor:"Tuple2", _0:_L.Cons(e_27._0,_51000_28._0), _1:_51000_28._1}:e_27.ctor==='Right'?{ctor:"Tuple2", _0:_51000_28._0, _1:_L.Cons(e_27._0,_51000_28._1)}:null,e!==null?e:_E.Case('Line 49, Column 5')):null,e!==null?e:_E.Case('Line 49, Column 5'));});
  elm.Native = elm.Native||{};
  var _ = elm.Native.Either||{};
  _.$op = {};
@@ -2717,7 +2778,10 @@ Elm.Either = function(elm){
  _.isRight = isRight_4;
  _.lefts = lefts_5;
  _.rights = rights_6;
- _.partition = partition_7
+ _.partition = partition_7;
+ _.consLeft = consLeft_8;
+ _.consRight = consRight_9;
+ _.consEither = consEither_10
  return elm.Either = _;
  };
 Elm.Dict = function(elm){
@@ -2737,7 +2801,7 @@ Elm.Dict = function(elm){
  min_5 = function(t_41){
   return (e=t_41.ctor==='RBEmpty'?Error.raise(_str('(min Empty) is not defined')):t_41.ctor==='RBNode'?(e=t_41._3.ctor==='RBEmpty'?{ctor:"Tuple2", _0:t_41._1, _1:t_41._2}:null,e!==null?e:min_5(t_41._3)):null,e!==null?e:_E.Case('Line 104, Column 3'));};
  lookup_6 = F2(function(k_45, t_46){
-  return (e=t_46.ctor==='RBEmpty'?Nothing:t_46.ctor==='RBNode'?(case12 = A2(compare, k_45, t_46._1), (e=case12.ctor==='EQ'?Just(t_46._2):case12.ctor==='GT'?A2(lookup_6, k_45, t_46._4):case12.ctor==='LT'?A2(lookup_6, k_45, t_46._3):null,e!==null?e:_E.Case('Line 124, Column 5'))):null,e!==null?e:_E.Case('Line 121, Column 2'));});
+  return (e=t_46.ctor==='RBEmpty'?Maybe.Nothing:t_46.ctor==='RBNode'?(case12 = A2(compare, k_45, t_46._1), (e=case12.ctor==='EQ'?Maybe.Just(t_46._2):case12.ctor==='GT'?A2(lookup_6, k_45, t_46._4):case12.ctor==='LT'?A2(lookup_6, k_45, t_46._3):null,e!==null?e:_E.Case('Line 124, Column 5'))):null,e!==null?e:_E.Case('Line 121, Column 2'));});
  findWithDefault_7 = F3(function(base_51, k_52, t_53){
   return (e=t_53.ctor==='RBEmpty'?base_51:t_53.ctor==='RBNode'?(case19 = A2(compare, k_52, t_53._1), (e=case19.ctor==='EQ'?t_53._2:case19.ctor==='GT'?A3(findWithDefault_7, base_51, k_52, t_53._4):case19.ctor==='LT'?A3(findWithDefault_7, base_51, k_52, t_53._3):null,e!==null?e:_E.Case('Line 136, Column 5'))):null,e!==null?e:_E.Case('Line 133, Column 2'));});
  member_8 = F2(function(k_58, t_59){
@@ -2780,9 +2844,9 @@ Elm.Dict = function(elm){
  moveRedRight_26 = function(t_129){
   return (t$_130 = color_flip_14(t_129), (isRedLeftLeft_22(t$_130)?color_flip_14(rotateRight_10(t$_130)):t$_130));};
  moveRedLeftIfNeeded_27 = function(t_131){
-  return ((not(isRedLeft_21(t_131))&&not(isRedLeftLeft_22(t_131)))?moveRedLeft_25(t_131):t_131);};
+  return ((isRedLeft_21(t_131)||isRedLeftLeft_22(t_131))?t_131:moveRedLeft_25(t_131));};
  moveRedRightIfNeeded_28 = function(t_132){
-  return ((not(isRedRight_23(t_132))&&not(isRedRightLeft_24(t_132)))?moveRedRight_26(t_132):t_132);};
+  return ((isRedRight_23(t_132)||isRedRightLeft_24(t_132))?t_132:moveRedRight_26(t_132));};
  deleteMin_29 = function(t_133){
   return (del_134 = function(t_135){
    return (e=t_135.ctor==='RBNode'?(e=t_135._3.ctor==='RBEmpty'?RBEmpty_3:null,e!==null?e:null):null,e!==null?e:(case198 = moveRedLeftIfNeeded_27(t_135), (e=case198.ctor==='RBEmpty'?RBEmpty_3:case198.ctor==='RBNode'?fixUp_16(A5(RBNode_2, case198._0, case198._1, case198._2, del_134(case198._3), case198._4)):null,e!==null?e:_E.Case('Line 296, Column 12'))));}, ensureBlackRoot_17(del_134(t_133)));};
@@ -3053,28 +3117,34 @@ Elm.Graphics.Input = function(elm){
  var _ = Elm.Signal(elm); var Signal = _;
  var lift = _.lift;
  var N = Elm.Native.Graphics.Input(elm);
- var e, case0, id_0, button_1, pool_10, customButton_2, pool_14, checkBox_3, cbs_16, TextState_4, text_5, tfs_22, password_6, tfs_25, email_7, tfs_28;
- id_0 = function(x_8){
-  return x_8;};
- button_1 = function(txt_9){
-  return (pool_10 = N.buttons({ctor:"Tuple0"}), {ctor:"Tuple2", _0:A2(pool_10.button, {ctor:"Tuple0"}, txt_9), _1:pool_10.events});};
- customButton_2 = F3(function(up_11, hover_12, down_13){
-  return (pool_14 = N.customButtons({ctor:"Tuple0"}), {ctor:"Tuple2", _0:A4(pool_14.button, {ctor:"Tuple0"}, up_11, hover_12, down_13), _1:pool_14.events});});
- checkBox_3 = function(b_15){
-  return (cbs_16 = N.checkBoxes(b_15), {ctor:"Tuple2", _0:A2(lift, cbs_16.box(id_0), cbs_16.events), _1:cbs_16.events});};
- TextState_4 = F3(function(text_17, start_18, end_19){
+ var e, case0, id_0, button_1, pool_11, customButton_2, pool_15, checkbox_3, cbs_17, FieldState_4, empty_5, field_6, tfs_22, password_7, tfs_24, email_8, tfs_26;
+ id_0 = function(x_9){
+  return x_9;};
+ button_1 = function(txt_10){
+  return (pool_11 = N.buttons({ctor:"Tuple0"}), {ctor:"Tuple2", _0:A2(pool_11.button, {ctor:"Tuple0"}, txt_10), _1:pool_11.events});};
+ customButton_2 = F3(function(up_12, hover_13, down_14){
+  return (pool_15 = N.customButtons({ctor:"Tuple0"}), {ctor:"Tuple2", _0:A4(pool_15.button, {ctor:"Tuple0"}, up_12, hover_13, down_14), _1:pool_15.events});});
+ checkbox_3 = function(b_16){
+  return (cbs_17 = N.checkboxes(b_16), {ctor:"Tuple2", _0:A2(lift, cbs_17.box(id_0), cbs_17.events), _1:cbs_17.events});};
+ FieldState_4 = F3(function(string_18, start_19, end_20){
   return {
     _:{
     },
-    end:end_19,
-    start:start_18,
-    text:text_17};});
- text_5 = F2(function(placeHolder_20, textState_21){
-  return (tfs_22 = N.textFields(textState_21), {ctor:"Tuple2", _0:A2(lift, A2(tfs_22.field, id_0, placeHolder_20), tfs_22.events), _1:tfs_22.events});});
- password_6 = F2(function(placeHolder_23, textState_24){
-  return (tfs_25 = N.passwords(textState_24), {ctor:"Tuple2", _0:A2(lift, A2(tfs_25.field, id_0, placeHolder_23), tfs_25.events), _1:tfs_25.events});});
- email_7 = F2(function(placeHolder_26, textState_27){
-  return (tfs_28 = N.emails(textState_27), {ctor:"Tuple2", _0:A2(lift, A2(tfs_28.field, id_0, placeHolder_26), tfs_28.events), _1:tfs_28.events});});
+    end:end_20,
+    start:start_19,
+    string:string_18};});
+ field_6 = function(placeHolder_21){
+  return (tfs_22 = N.fields(empty_5), {ctor:"Tuple2", _0:A2(lift, A2(tfs_22.field, id_0, placeHolder_21), tfs_22.events), _1:tfs_22.events});};
+ password_7 = function(placeHolder_23){
+  return (tfs_24 = N.passwords(empty_5), {ctor:"Tuple2", _0:A2(lift, A2(tfs_24.field, id_0, placeHolder_23), tfs_24.events), _1:tfs_24.events});};
+ email_8 = function(placeHolder_25){
+  return (tfs_26 = N.emails(empty_5), {ctor:"Tuple2", _0:A2(lift, A2(tfs_26.field, id_0, placeHolder_25), tfs_26.events), _1:tfs_26.events});};
+ empty_5 = {
+   _:{
+   },
+   end:0,
+   start:0,
+   string:_str('')};
  elm.Native = elm.Native||{};
  elm.Native.Graphics = elm.Native.Graphics||{};
  var _ = elm.Native.Graphics.Input||{};
@@ -3082,11 +3152,12 @@ Elm.Graphics.Input = function(elm){
  _.id = id_0;
  _.button = button_1;
  _.customButton = customButton_2;
- _.checkBox = checkBox_3;
- _.TextState = TextState_4;
- _.text = text_5;
- _.password = password_6;
- _.email = email_7
+ _.checkbox = checkbox_3;
+ _.FieldState = FieldState_4;
+ _.empty = empty_5;
+ _.field = field_6;
+ _.password = password_7;
+ _.email = email_8
  elm.Graphics = elm.Graphics||{};
  return elm.Graphics.Input = _;
  };
@@ -4389,26 +4460,24 @@ Elm.Website.Skeleton = function(elm){
  var _ = Elm.Website.ColorScheme(elm); var Website = Website||{};Website.ColorScheme = _; var hiding={}; for(var k in _){if(k in hiding)continue;eval('var '+k+'=_["'+k+'"]')}
  var Input = Elm.Graphics.Input(elm);
  var Text = Elm.Text(elm);
- var e, case0, navigation_0, button_1, btn_13, buttons_2, title_3, ttl_16, veiwSource_4, heading_5, x_19, header_20, skeleton_6, inner_23, body_24, f_7, y_26, redirect_8;
- button_1 = function(_16000_9){
-  return (e=_16000_9.ctor==='Tuple3'?(btn_13 = function(alpha_14){
+ var e, case0, navigation_0, button_1, btn_12, buttons_2, title_3, ttl_15, veiwSource_4, heading_5, header_18, skeleton_6, inner_21, body_22, redirect_7;
+ button_1 = function(_16000_8){
+  return (e=_16000_8.ctor==='Tuple3'?(btn_12 = function(alpha_13){
    return A2(flow, down, _L.Cons(function(x){
-    return A2(color, A4(rgba, 200, 200, 200, alpha_14), A4(container, 100, 58, middle, A2(width, 100, centered(A2(Text.color, black, x)))));}(toText(_16000_9._0)),_L.Cons(A2(color, _16000_9._2, A2(spacer, 100, 2)),_L.Nil)));}, A2(link, _16000_9._1, A4(navigation_0.button, _16000_9._1, btn_13(0), btn_13(0.1), btn_13(0.2)))):null,e!==null?e:_E.Case('Line 12, Column 2'));};
- title_3 = function(w_15){
-  return (ttl_16 = function(x){
-   return A2(Text.link, _str('/'), A2(Text.color, black, A2(Text.height, 2, bold(x))));}(toText(_str('Elm'))), A4(container, w_15, 60, midLeft, text(ttl_16)));};
- heading_5 = F2(function(outer_17, inner_18){
-  return (x_19 = console.log(outer_17), header_20 = A4(container, outer_17, 60, middle, A2(beside, title_3((inner_18-widthOf(buttons_2))), buttons_2)), layers(_L.Cons(A2(flow, down, _L.Cons(A2(color, lightGrey, A2(spacer, outer_17, 58)),_L.Cons(A2(color, mediumGrey, A2(spacer, outer_17, 1)),_L.Nil))),_L.Cons(header_20,((_N.cmp(outer_17,800).ctor==='LT')?_L.Nil:_L.Cons(A2(width, outer_17, veiwSource_4),_L.Nil))))));});
- skeleton_6 = F2(function(bodyFunc_21, outer_22){
-  return (inner_23 = ((_N.cmp(outer_22,840).ctor==='LT')?(outer_22-40):800), body_24 = bodyFunc_21(inner_23), A2(flow, down, _L.Cons(A2(heading_5, outer_22, inner_23),_L.Cons(A2(spacer, outer_22, 10),_L.Cons(A4(container, outer_22, heightOf(body_24), middle, body_24),_L.Cons(function(x){
-   return A4(container, outer_22, 50, midBottom, Text.centered(x));}(_L.append(A2(Text.color, A3(rgb, 145, 145, 145), Text.toText(_str('&copy; 2011-2013 '))),A2(Text.link, _str('https://github.com/evancz'), Text.toText(_str('Evan Czaplicki'))))),_L.Nil))))));});
- f_7 = function(x_25){
-  return (y_26 = console.log(JS.fromString(x_25)), JS.fromString(x_25));};
+    return A2(color, A4(rgba, 200, 200, 200, alpha_13), A4(container, 100, 58, middle, A2(width, 100, centered(A2(Text.color, black, x)))));}(toText(_16000_8._0)),_L.Cons(A2(color, _16000_8._2, A2(spacer, 100, 2)),_L.Nil)));}, A2(link, _16000_8._1, A4(navigation_0.button, _16000_8._1, btn_12(0), btn_12(0.1), btn_12(0.2)))):null,e!==null?e:_E.Case('Line 12, Column 2'));};
+ title_3 = function(w_14){
+  return (ttl_15 = function(x){
+   return A2(Text.link, _str('/'), A2(Text.color, black, A2(Text.height, 2, bold(x))));}(toText(_str('Elm'))), A4(container, w_14, 60, midLeft, text(ttl_15)));};
+ heading_5 = F2(function(outer_16, inner_17){
+  return (header_18 = A4(container, outer_16, 60, middle, A2(beside, title_3((inner_17-widthOf(buttons_2))), buttons_2)), layers(_L.Cons(A2(flow, down, _L.Cons(A2(color, lightGrey, A2(spacer, outer_16, 58)),_L.Cons(A2(color, mediumGrey, A2(spacer, outer_16, 1)),_L.Nil))),_L.Cons(header_18,((_N.cmp(outer_16,800).ctor==='LT')?_L.Nil:_L.Cons(A2(width, outer_16, veiwSource_4),_L.Nil))))));});
+ skeleton_6 = F2(function(bodyFunc_19, outer_20){
+  return (inner_21 = ((_N.cmp(outer_20,840).ctor==='LT')?(outer_20-40):800), body_22 = bodyFunc_19(inner_21), A2(flow, down, _L.Cons(A2(heading_5, outer_20, inner_21),_L.Cons(A2(spacer, outer_20, 10),_L.Cons(A4(container, outer_20, heightOf(body_22), middle, body_22),_L.Cons(function(x){
+   return A4(container, outer_20, 50, midBottom, Text.centered(x));}(_L.append(A2(Text.color, A3(rgb, 145, 145, 145), Text.toText(_str('&copy; 2011-2013 '))),A2(Text.link, _str('https://github.com/evancz'), Text.toText(_str('Evan Czaplicki'))))),_L.Nil))))));});
  navigation_0 = Input.customButtons(_str(''));
  buttons_2 = A2(flow, right, A2(map, button_1, _L.Cons({ctor:"Tuple3", _0:_str('About'), _1:_str('/About.elm'), _2:accent1},_L.Cons({ctor:"Tuple3", _0:_str('Examples'), _1:_str('/Examples.elm'), _2:accent2},_L.Cons({ctor:"Tuple3", _0:_str('Docs'), _1:_str('/Documentation.elm'), _2:accent3},_L.Cons({ctor:"Tuple3", _0:_str('Download'), _1:_str('/Download.elm'), _2:accent4},_L.Nil))))));
  veiwSource_4 = text('<div style="height:0;width:0;">&nbsp;</div><p><a href="javascript:var p=top.location.pathname;if(p.slice(0,5)!=\'/edit\')top.location.href=\'/edit\'+(p==\'/\'?\'/Elm.elm\':p);"> <img style="position: absolute; top: 0; right: 0; border: 0;"\n     src="/ribbon.gif"\n     alt="View Page Source"> </a></p><div style="height:0;width:0;">&nbsp;</div>');
- redirect_8 = A2(lift,f_7,navigation_0.events);
- lift(function(v) { var e = document.createEvent('Event');e.initEvent('elm_redirect_' + elm.id, true, true);e.value = v;document.dispatchEvent(e); return v; })(redirect_8);
+ redirect_7 = A2(lift,JS.fromString,navigation_0.events);
+ lift(function(v) { var e = document.createEvent('Event');e.initEvent('elm_redirect_' + elm.id, true, true);e.value = v;document.dispatchEvent(e); return v; })(redirect_7);
  elm.Native = elm.Native||{};
  elm.Native.Website = elm.Native.Website||{};
  var _ = elm.Native.Website.Skeleton||{};
@@ -4420,8 +4489,7 @@ Elm.Website.Skeleton = function(elm){
  _.veiwSource = veiwSource_4;
  _.heading = heading_5;
  _.skeleton = skeleton_6;
- _.f = f_7;
- _.redirect = redirect_8
+ _.redirect = redirect_7
  elm.Website = elm.Website||{};
  return elm.Website.Skeleton = _;
  };

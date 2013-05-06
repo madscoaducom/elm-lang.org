@@ -34,8 +34,7 @@ veiwSource = [markdown|
 |]
 
 heading outer inner =
-  let x = console.log outer
-      header = container outer 60 middle $
+  let header = container outer 60 middle $
                title (inner - widthOf buttons) `beside` buttons
   in  layers $ [ flow down [ color lightGrey (spacer outer 58)
                            , color mediumGrey (spacer outer 1) ]
@@ -54,8 +53,6 @@ skeleton bodyFunc outer =
              Text.link "https://github.com/evancz" (Text.toText "Evan Czaplicki")
        ]
 
-f x = let y = console.log (JS.fromString x) in JS.fromString x
-
-redirect = f <~ navigation.events
+redirect = JS.fromString <~ navigation.events
 foreign export jsevent "elm_redirect"
   redirect : Signal JSString
