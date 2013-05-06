@@ -205,6 +205,11 @@ function showDoc () {
   var doc_div = generateView(desc, true, 'doc');
   var docView = document.getElementById('doc_desc');
 
+  var vscroll = document.getElementsByClassName('CodeMirror-vscrollbar')[0];
+  if (vscroll && vscroll.offsetWidth  > 0) {
+    docView.style.marginRight = vscroll.offsetWidth + "px";
+  }
+
   docView.appendChild(type_div);
   docView.appendChild(doc_div);
   docView.style.visibility = 'visible';
